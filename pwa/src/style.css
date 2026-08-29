@@ -1,0 +1,9 @@
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
+@import '../design/tokens.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+html {
+  scrollbar-gutter: stable;
+}

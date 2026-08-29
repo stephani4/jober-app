@@ -1,0 +1,12 @@
+---
+description: Admin SPA — comment functions, classes, methods, complex logic
+globs: admin/**/*.{ts,vue}
+alwaysApply: false
+---
+
+# Admin code comments
+
+- Comment **classes**, exported **functions/composables**, and non-trivial **methods** with brief JSDoc/TSDoc (purpose, params, return).
+- Comment **complex logic** (non-obvious branches, invariants, workarounds) with short inline notes — explain *why*, not restating *what*.
+- Keep comments up to date with the code; remove obsolete comments.
+- Prefer concise Russian or English comments consistent with surrounding code; do not spam obvious one-liners.

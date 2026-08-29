@@ -1,0 +1,20 @@
+---
+description: Jober project overview and domain
+alwaysApply: true
+---
+
+# Jober
+
+Тема: доска заданий / объявлений для исполнителей.
+
+- Заказы могут публиковать **заказчики** и **исполнители**.
+- Приложение работает в режиме **realtime** (Centrifugo + backend API + PWA).
+- Админка — отдельный Vue SPA (`admin`), сотрудники в таблице `admins` + Spatie Permission.
+
+Стек: Laravel API (`backend`), Vue 3 PWA (`pwa`), Vue 3 admin (`admin`), Centrifugo, Redis, PostgreSQL — через Docker Compose.
+
+## UI
+
+- Default color palette is **light**.
+- Support switching to a **dark** theme (class-based `dark` mode on `<html>`).
+- Baseline mobile design: `pwa/design/reference/profile-baseline.png` (см. правило `pwa-design`).

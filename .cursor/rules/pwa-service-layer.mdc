@@ -1,0 +1,12 @@
+---
+description: PWA Service Layer for API and clean components
+globs: pwa/**/*.{ts,vue}
+alwaysApply: false
+---
+
+# PWA conventions
+
+- Use the **Service Layer** pattern for backend API calls: put HTTP requests in dedicated service classes (class-style), not inside Vue components or stores when the logic is non-trivial.
+- Prefer a clear structure, e.g. `src/services/*.ts` with classes like `AuthService`, `UserService`.
+- Components stay thin: UI and calling **composables** — no raw `fetch`/`axios` and no direct store usage in views/components.
+- Write **clean, maintainable components**: single responsibility, clear names, small templates, no dead code or unnecessary complexity.

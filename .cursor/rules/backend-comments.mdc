@@ -1,0 +1,12 @@
+---
+description: Backend — comment functions, classes, methods, complex logic
+globs: backend/**/*.{php}
+alwaysApply: false
+---
+
+# Backend code comments
+
+- Comment **classes**, **public methods**, and non-trivial **private methods** with clear PHPDoc (purpose, params, return).
+- Comment **complex logic** (non-obvious branches, invariants, workarounds) with short inline notes — explain *why*, not restating *what*.
+- Keep comments up to date with the code; remove obsolete comments.
+- Prefer concise Russian or English comments consistent with surrounding code; do not spam obvious one-liners.

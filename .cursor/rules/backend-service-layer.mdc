@@ -1,0 +1,12 @@
+---
+description: Backend Service Layer, reusable and clean code
+globs: backend/**/*.php
+alwaysApply: false
+---
+
+# Backend conventions
+
+- Use the **Service Layer** pattern: put non-trivial business logic in dedicated service classes (e.g. `app/Services`), not in controllers, models, or routes.
+- Controllers stay thin: validate input, call a service, return a response.
+- Prefer **reusable** code: extract shared logic into services, actions, or helpers instead of copying.
+- Always keep the code **clean**: clear names, small methods, no dead code, no unnecessary complexity.

@@ -1,0 +1,13 @@
+---
+description: Admin Service Layer for API and clean components
+globs: admin/**/*.{ts,vue}
+alwaysApply: false
+---
+
+# Admin conventions
+
+- Use the **Service Layer** pattern for backend API calls: put HTTP requests in dedicated service classes, not inside Vue components or stores when the logic is non-trivial.
+- Prefer `src/services/*.ts` with classes like `AuthService`, `AdminOrderService`.
+- Components stay thin: UI and composables — no raw `fetch`/`axios` and no direct store usage in views/components.
+- Describe entities with **Zod** schemas in `src/schemas/`. Infer types via `z.infer`.
+- Do not import from `pwa/`. Admin token is `jober_admin_token`.

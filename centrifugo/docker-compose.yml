@@ -1,0 +1,7 @@
+# Deprecated: use root docker-compose.yml
+
+All services (backend, pwa, redis, centrifugo) start from the project root:
+
+```bash
+docker compose up -d --build
+```

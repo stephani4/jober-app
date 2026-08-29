@@ -1,0 +1,12 @@
+---
+description: PWA Zod schemas and Vuelidate validations
+globs: pwa/**/*.{ts,vue}
+alwaysApply: false
+---
+
+# PWA schemas and validations
+
+- Describe entity types (users, orders, and other domain models) with **Zod** schemas in `src/schemas/`.
+- Infer TypeScript types from Zod via `z.infer<typeof Schema>` — avoid duplicating plain interfaces when a schema exists.
+- Validate forms and client input with **Vuelidate**; keep validation rule factories in `src/validations/`.
+- Components import schemas/validations — do not inline complex validation or entity shape definitions in views.

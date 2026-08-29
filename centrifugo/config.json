@@ -1,0 +1,56 @@
+{
+  "engine": {
+    "type": "redis",
+    "redis": {
+      "address": "redis://redis:6379"
+    }
+  },
+  "client": {
+    "token": {
+      "hmac_secret_key": "jober-dev-client-secret-change-me"
+    },
+    "allowed_origins": [
+      "http://localhost:5173",
+      "http://127.0.0.1:5173"
+    ]
+  },
+  "http_api": {
+    "key": "jober-dev-api-key-change-me"
+  },
+  "admin": {
+    "enabled": true,
+    "password": "admin",
+    "secret": "jober-dev-admin-secret-change-me"
+  },
+  "channel": {
+    "namespaces": [
+      {
+        "name": "personal"
+      },
+      {
+        "name": "orders"
+      }
+    ]
+  },
+  "rpc": {
+    "proxy": {
+      "endpoint": "http://backend:8000/api/centrifugo/rpc",
+      "timeout": "10s",
+      "http": {
+        "static_headers": {
+          "X-Centrifugo-Proxy-Secret": "jober-dev-proxy-secret"
+        }
+      }
+    },
+    "namespaces": [
+      {
+        "name": "order",
+        "proxy_enabled": true
+      },
+      {
+        "name": "notification",
+        "proxy_enabled": true
+      }
+    ]
+  }
+}

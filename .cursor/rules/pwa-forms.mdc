@@ -1,0 +1,11 @@
+---
+description: PWA — decompose page forms into components
+globs: pwa/**/*.{ts,vue}
+alwaysApply: false
+---
+
+# PWA forms
+
+- Decompose page forms into dedicated components under `src/components/` (e.g. `components/auth/LoginForm.vue`).
+- Views own page chrome/titles and compose form components — do not keep large form markup inline in views.
+- Form components encapsulate fields, client validation (Vuelidate), and emit/submit results to the parent or call stores/services.

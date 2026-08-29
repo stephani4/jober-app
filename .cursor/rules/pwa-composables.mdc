@@ -1,0 +1,12 @@
+---
+description: PWA composables as contracts over stores
+globs: pwa/**/*.{ts,vue}
+alwaysApply: false
+---
+
+# PWA composables and stores
+
+- Put complex shared state and side effects in **Pinia stores** (`src/stores/`).
+- Expose a clear **contract** for UI through **composables** (`src/composables/`), e.g. `useAuth()`, `useTheme()`, `useLoginForm()`.
+- Components and views import composables — do not call stores directly from UI layers.
+- Composables may compose stores, schemas, validations, and services; keep the returned API small and intentional.

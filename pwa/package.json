@@ -1,0 +1,33 @@
+{
+  "name": "pwa",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.8",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.2"
+  },
+  "dependencies": {
+    "@primeuix/themes": "^1.2.5",
+    "@tailwindcss/vite": "^4.3.3",
+    "@vuelidate/core": "^2.0.3",
+    "@vuelidate/validators": "^2.0.4",
+    "axios": "^1.20.0",
+    "centrifuge": "^5.7.2",
+    "mmr-gl": "^0.2.43",
+    "pinia": "^4.0.3",
+    "primevue": "~4.5.5",
+    "tailwindcss": "^4.3.3",
+    "tailwindcss-primeui": "^0.6.1",
+    "vue": "^3.5.41",
+    "vue-draggable-plus": "^0.6.1",
+    "vue-router": "^4.6.4",
+    "zod": "^4.4.3"
+  }
+}

@@ -1,0 +1,13 @@
+---
+description: PWA layouts — base, unauthorized and auth shells
+globs: pwa/**/*.{ts,vue}
+alwaysApply: false
+---
+
+# PWA layouts
+
+- Keep a shared base shell in `src/layouts/Layout.vue` (background, page frame, `header` / default / `footer` slots).
+- Guest routes (login, register) use `UnauthorizeLayout.vue`.
+- Authenticated routes use `AuthLayout.vue` (`AppHeroHeader`, `AppBottomNav`, page content).
+- Switch layouts via nested Vue Router routes — do not wrap every view in its own full-page chrome.
+- Views render page content only; chrome belongs to layouts.
