@@ -27,3 +27,28 @@ DB: `jober` / user `jober` / password `jober`
 docker compose logs -f
 docker compose down
 ```
+
+## Деплой (PaaS / Timeweb App Platform)
+
+Платформа собирает образ из **корня репозитория** (`Dockerfile`). Локальная разработка по-прежнему через `docker compose`.
+
+Тип приложения: **Dockerfile**. Порт контейнера: **8080**.
+
+После деплоя:
+
+| URL | Что |
+|-----|-----|
+| `/` | PWA |
+| `/admin/` | Админка |
+| `/api` | Laravel API |
+| `/up` | Healthcheck |
+
+Нужна внешняя PostgreSQL. Задайте в панели:
+
+- `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`
+- `APP_KEY` (сгенерировать: `php artisan key:generate --show`)
+- `APP_URL`, `FRONTEND_URL` — публичный `https://…` домен
+- `ADMIN_URL` — тот же домен с суффиксом `/admin`
+- `VITE_VK_MAPS_API_KEY` — build arg, иначе карты в PWA будут без ключа
+
+Админка после сидера: `admin@jober.local` / `password` (смените `ADMIN_PASSWORD`).

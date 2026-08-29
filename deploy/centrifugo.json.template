@@ -1,0 +1,41 @@
+{
+  "engine": {
+    "type": "redis",
+    "redis": {
+      "address": "redis://127.0.0.1:6379"
+    }
+  },
+  "client": {
+    "token": {
+      "hmac_secret_key": "${CENTRIFUGO_TOKEN_HMAC_SECRET}"
+    },
+    "allowed_origins": ["*"]
+  },
+  "http_api": {
+    "key": "${CENTRIFUGO_API_KEY}"
+  },
+  "admin": {
+    "enabled": false
+  },
+  "channel": {
+    "namespaces": [
+      { "name": "personal" },
+      { "name": "orders" }
+    ]
+  },
+  "rpc": {
+    "proxy": {
+      "endpoint": "http://127.0.0.1:8080/api/centrifugo/rpc",
+      "timeout": "10s",
+      "http": {
+        "static_headers": {
+          "X-Centrifugo-Proxy-Secret": "${CENTRIFUGO_PROXY_SECRET}"
+        }
+      }
+    },
+    "namespaces": [
+      { "name": "order", "proxy_enabled": true },
+      { "name": "notification", "proxy_enabled": true }
+    ]
+  }
+}

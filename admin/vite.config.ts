@@ -6,6 +6,7 @@ import { fileURLToPath, URL } from 'node:url'
 const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || 'http://localhost:8000'
 
 export default defineConfig({
+  base: process.env.VITE_BASE || '/',
   plugins: [vue(), tailwindcss()],
   resolve: {
     alias: {
