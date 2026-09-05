@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { authService } from '@/services/AuthService'
 import { HttpClient } from '@/services/HttpClient'
+import { pushService } from '@/services/PushService'
 import type { AuthUser, LoginPayload, RegisterPayload } from '@/schemas/auth'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -21,6 +22,11 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout(): Promise<void> {
+    try {
+      await pushService.detach()
+    } catch {
+      // выход всё равно выполняем
+    }
     await authService.logout()
     user.value = null
   }

@@ -36,7 +36,11 @@ const costLabel = computed(() => {
         </div>
 
         <div class="px-5 pb-5 pt-4">
-          <p class="text-sm text-text-secondary">Новый заказ · {{ costLabel }}</p>
+          <p class="text-sm text-text-secondary">
+            Новый заказ
+            <span v-if="order.order_type?.name"> · {{ order.order_type.name }}</span>
+            · {{ costLabel }}
+          </p>
           <h2 id="order-offer-title" class="mt-1 text-lg text-text-primary dark:text-zinc-100">
             {{ order.description || 'Заказ без примечания' }}
           </h2>

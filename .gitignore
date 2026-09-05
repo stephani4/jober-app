@@ -1,3 +1,6 @@
+certs/
+!certs/.gitkeep
+
 .idea/
 *.iml
 .DS_Store

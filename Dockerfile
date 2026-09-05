@@ -37,11 +37,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     libzip-dev \
     libpq-dev \
+    libgmp-dev \
     nginx \
     supervisor \
     redis-server \
     gettext-base \
-  && docker-php-ext-install pdo_pgsql pgsql pcntl posix zip opcache \
+  && docker-php-ext-install pdo_pgsql pgsql pcntl posix zip opcache gmp \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=centrifugo/centrifugo:v6 /usr/local/bin/centrifugo /usr/local/bin/centrifugo
@@ -50,11 +51,13 @@ RUN chmod +x /usr/local/bin/centrifugo
 COPY deploy/php.ini /usr/local/etc/php/conf.d/jober.ini
 COPY deploy/zz-clear-env.conf /usr/local/etc/php-fpm.d/zz-clear-env.conf
 COPY deploy/nginx.conf /etc/nginx/nginx.conf
+COPY deploy/nginx.ssl.conf /etc/nginx/nginx.ssl.conf
+COPY deploy/nginx-locations.conf /etc/nginx/nginx-locations.conf
 COPY deploy/supervisord.conf /etc/supervisor/conf.d/jober.conf
 COPY deploy/centrifugo.json.template /etc/centrifugo/config.json.template
 COPY deploy/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh \
-  && mkdir -p /run /var/lib/nginx /var/www/pwa /var/www/admin /etc/centrifugo
+  && mkdir -p /run /var/lib/nginx /var/www/pwa /var/www/admin /etc/centrifugo /etc/nginx/certs
 
 WORKDIR /var/www/html
 
@@ -82,6 +85,6 @@ ENV APP_ENV=production \
     CENTRIFUGO_TOKEN_TTL=3600 \
     CENTRIFUGO_PROXY_SECRET=jober-dev-proxy-secret
 
-EXPOSE 8080
+EXPOSE 80 443 8080
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

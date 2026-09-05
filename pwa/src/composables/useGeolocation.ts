@@ -7,6 +7,29 @@ export type GeoPosition = {
 }
 
 /**
+ * Одноразовый запрос текущих координат. Не бросает — при отказе или ошибке null.
+ */
+export function requestCurrentPosition(timeoutMs = 4000): Promise<GeoPosition | null> {
+  if (!navigator.geolocation) {
+    return Promise.resolve(null)
+  }
+
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (next) => {
+        resolve({
+          lat: next.coords.latitude,
+          lon: next.coords.longitude,
+          accuracy: next.coords.accuracy,
+        })
+      },
+      () => resolve(null),
+      { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 30_000 },
+    )
+  })
+}
+
+/**
  * Следит за позицией исполнителя через Geolocation API.
  * В DEV можно перехватить точку вручную (перетаскивание на карте).
  */

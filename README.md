@@ -50,5 +50,6 @@ docker compose down
 - `APP_URL`, `FRONTEND_URL` — публичный `https://…` домен
 - `ADMIN_URL` — тот же домен с суффиксом `/admin`
 - `VITE_VK_MAPS_API_KEY` — build arg, иначе карты в PWA будут без ключа
+- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` — ключи Web Push (`php -r "require 'vendor/autoload.php'; echo json_encode(Minishlink\WebPush\VAPID::createVapidKeys());"`)
 
 Админка после сидера: `admin@jober.local` / `password` (смените `ADMIN_PASSWORD`).

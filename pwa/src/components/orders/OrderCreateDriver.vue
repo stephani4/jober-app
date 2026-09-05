@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import OrderCreatePointsStep from '@/components/orders/OrderCreatePointsStep.vue'
 import OrderCreateCostStep from '@/components/orders/OrderCreateCostStep.vue'
 import OrderCreateSummaryStep from '@/components/orders/OrderCreateSummaryStep.vue'
@@ -10,11 +11,13 @@ const emit = defineEmits<{
 
 const {
   step,
+  orderType,
   points,
   cost,
   description,
   submitting,
   error,
+  isSinglePoint,
   next,
   back,
   submit,
@@ -24,11 +27,11 @@ const {
   setPointLocation,
 } = useOrderCreateDriver()
 
-const steps = [
-  { value: 1, label: 'Точки' },
+const steps = computed(() => [
+  { value: 1, label: isSinglePoint.value ? 'Доставка' : 'Точки' },
   { value: 2, label: 'Стоимость' },
   { value: 3, label: 'Итог' },
-] as const
+])
 
 async function onSubmit(): Promise<void> {
   const ok = await submit()
@@ -57,9 +60,18 @@ async function onSubmit(): Promise<void> {
       </li>
     </ol>
 
+    <p
+      v-if="orderType"
+      class="rounded-xl border border-border-subtle bg-surface-muted px-4 py-3 text-sm dark:border-white/10 dark:bg-zinc-900"
+    >
+      <span class="text-text-primary dark:text-zinc-100">{{ orderType.name }}</span>
+      <span class="mt-0.5 block text-text-secondary">{{ orderType.description }}</span>
+    </p>
+
     <OrderCreatePointsStep
       v-if="step === 1"
       :points="points"
+      :single-point="isSinglePoint"
       @update:points="setPoints"
       @add="addPoint"
       @remove="removePoint"
@@ -77,6 +89,8 @@ async function onSubmit(): Promise<void> {
       :points="points"
       :cost="cost"
       :description="description"
+      :order-type-name="orderType?.name ?? null"
+      :single-point="isSinglePoint"
     />
 
     <p

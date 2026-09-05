@@ -1,8 +1,19 @@
 import { z } from 'zod'
 import { userSchema } from '@/schemas/user'
 
+export const BUY_AND_DELIVER_TYPE_ID = 1
+export const HELP_CARRY_TYPE_ID = 2
+export const ERRAND_TYPE_ID = 3
+
 export const orderStatusSchema = z.enum(['moderate', 'wait', 'process', 'complete', 'cancel'])
 export const orderExecutingStatusSchema = z.enum(['wait', 'process', 'complete'])
+
+export const orderTypeSchema = z.object({
+  id: z.number().int().positive(),
+  name: z.string(),
+  description: z.string(),
+  max_points: z.number().int().positive(),
+})
 
 export const orderPointSchema = z.object({
   id: z.number().int().positive(),
@@ -17,6 +28,8 @@ export const orderPointSchema = z.object({
 export const orderSchema = z.object({
   id: z.number().int().positive(),
   user_id: z.number().int().positive(),
+  order_type_id: z.number().int().positive().nullable().optional(),
+  order_type: orderTypeSchema.nullable().optional(),
   description: z.string(),
   cost: z.number(),
   status: orderStatusSchema.default('wait'),
@@ -56,9 +69,18 @@ export const createOrderPointPayloadSchema = z.object({
 })
 
 export const createOrderPayloadSchema = z.object({
+  order_type_id: z.number().int().positive(),
   description: z.string().trim(),
   cost: z.number().positive('Укажите стоимость заказа'),
   points: z.array(createOrderPointPayloadSchema).min(1, 'Добавьте хотя бы одну точку'),
+}).superRefine((payload, ctx) => {
+  if (payload.order_type_id === BUY_AND_DELIVER_TYPE_ID && payload.points.length > 1) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Для этого вида заказа нужна одна точка доставки.',
+      path: ['points'],
+    })
+  }
 })
 
 export const orderExecutingPointSchema = z.object({
@@ -108,6 +130,7 @@ export const orderHistoryListSchema = z.object({
 })
 
 export type OrderPoint = z.infer<typeof orderPointSchema>
+export type OrderType = z.infer<typeof orderTypeSchema>
 export type Order = z.infer<typeof orderSchema>
 export type OrderCreatedEvent = z.infer<typeof orderCreatedEventSchema>
 export type OrderTakenEvent = z.infer<typeof orderTakenEventSchema>

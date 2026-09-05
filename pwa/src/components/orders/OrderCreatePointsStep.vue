@@ -6,6 +6,7 @@ import type { DraftOrderPoint } from '@/stores/orderCreate'
 
 const props = defineProps<{
   points: DraftOrderPoint[]
+  singlePoint?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -24,6 +25,18 @@ const list = computed({
 
 const pickingPoint = computed(() => props.points.find((point) => point.clientId === pickingId.value))
 
+const descriptionLabel = computed(() =>
+  props.singlePoint ? 'Что нужно купить' : 'Что сделать в точке',
+)
+
+const descriptionPlaceholder = computed(() =>
+  props.singlePoint ? 'Молоко 2 л, хлеб, сыр' : 'Забрать документы у секретаря',
+)
+
+const mapTitle = computed(() =>
+  props.singlePoint ? 'Куда доставить товар' : 'Выберите точку на карте',
+)
+
 function onMapSelect(payload: { lat: number; lon: number; address: string | null }): void {
   if (!pickingId.value) {
     return
@@ -38,13 +51,23 @@ function pointLabel(point: DraftOrderPoint): string {
   if (point.lat != null && point.lon != null) {
     return `${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}`
   }
-  return 'Точка не выбрана'
+  return props.singlePoint ? 'Адрес доставки не выбран' : 'Точка не выбрана'
 }
 </script>
 
 <template>
   <div class="space-y-3">
-    <VueDraggable v-model="list" handle=".drag-handle" :animation="180" class="space-y-3">
+    <p v-if="singlePoint" class="text-sm text-text-secondary">
+      Укажите, что купить, и точку, куда привезти товар.
+    </p>
+
+    <VueDraggable
+      v-model="list"
+      handle=".drag-handle"
+      :animation="180"
+      :disabled="singlePoint"
+      class="space-y-3"
+    >
       <article
         v-for="(element, index) in list"
         :key="element.clientId"
@@ -53,13 +76,14 @@ function pointLabel(point: DraftOrderPoint): string {
         <div class="mb-3 flex items-center justify-between gap-2">
           <button
             type="button"
-            class="drag-handle flex h-10 w-10 cursor-grab items-center justify-center rounded-full bg-surface-muted text-text-secondary active:cursor-grabbing dark:bg-zinc-800"
-            aria-label="Перетащить точку"
+            class="flex h-10 w-10 items-center justify-center rounded-full bg-surface-muted text-text-secondary dark:bg-zinc-800"
+            :class="singlePoint ? 'cursor-default' : 'drag-handle cursor-grab active:cursor-grabbing'"
+            :aria-label="singlePoint ? 'Точка доставки' : 'Перетащить точку'"
           >
             {{ index + 1 }}
           </button>
           <button
-            v-if="list.length > 1"
+            v-if="!singlePoint && list.length > 1"
             type="button"
             class="text-sm text-accent-danger"
             @click="emit('remove', element.clientId)"
@@ -69,14 +93,14 @@ function pointLabel(point: DraftOrderPoint): string {
         </div>
 
         <label class="block text-sm text-text-secondary" :for="`point-desc-${element.clientId}`">
-          Что сделать в точке
+          {{ descriptionLabel }}
         </label>
         <textarea
           :id="`point-desc-${element.clientId}`"
           v-model="element.description"
           rows="3"
           class="mt-1 w-full rounded-xl border border-border-subtle bg-surface-muted px-3 py-2 text-text-primary outline-none dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-100"
-          placeholder="Забрать документы у секретаря"
+          :placeholder="descriptionPlaceholder"
         />
 
         <p class="mt-3 text-sm text-text-secondary">{{ pointLabel(element) }}</p>
@@ -85,12 +109,13 @@ function pointLabel(point: DraftOrderPoint): string {
           class="mt-2 w-full rounded-xl border border-border-subtle px-4 py-3 text-sm text-text-primary dark:border-white/10 dark:text-zinc-100"
           @click="pickingId = element.clientId"
         >
-          Выбрать на карте
+          {{ singlePoint ? 'Указать на карте, куда доставить' : 'Выбрать на карте' }}
         </button>
       </article>
     </VueDraggable>
 
     <button
+      v-if="!singlePoint"
       type="button"
       class="w-full rounded-card border border-dashed border-border-subtle px-4 py-3 text-sm text-text-secondary dark:border-white/20"
       @click="emit('add')"
@@ -102,6 +127,7 @@ function pointLabel(point: DraftOrderPoint): string {
       v-if="pickingId"
       :lat="pickingPoint?.lat"
       :lon="pickingPoint?.lon"
+      :title="mapTitle"
       @select="onMapSelect"
       @close="pickingId = null"
     />

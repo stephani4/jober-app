@@ -1,6 +1,7 @@
-import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { CreateOrderPayload } from '@/schemas/order'
+import { defineStore } from 'pinia'
+import { type CreateOrderPayload, type OrderType } from '@/schemas/order'
+import { createClientId } from '@/utils/id'
 
 export interface DraftOrderPoint {
   clientId: string
@@ -12,7 +13,7 @@ export interface DraftOrderPoint {
 
 function createPoint(): DraftOrderPoint {
   return {
-    clientId: crypto.randomUUID(),
+    clientId: createClientId(),
     description: '',
     address: null,
     lat: null,
@@ -22,11 +23,14 @@ function createPoint(): DraftOrderPoint {
 
 export const useOrderCreateStore = defineStore('orderCreate', () => {
   const step = ref(1)
+  const orderType = ref<OrderType | null>(null)
   const points = ref<DraftOrderPoint[]>([createPoint()])
   const cost = ref<number | null>(null)
   const description = ref('')
   const submitting = ref(false)
   const error = ref('')
+
+  const isSinglePoint = computed(() => orderType.value?.max_points === 1)
 
   const canGoStep2 = computed(() =>
     points.value.length > 0 &&
@@ -35,7 +39,18 @@ export const useOrderCreateStore = defineStore('orderCreate', () => {
 
   const canGoStep3 = computed(() => typeof cost.value === 'number' && cost.value > 0)
 
+  /**
+   * Новый черновик под выбранный вид заказа.
+   */
+  function begin(type: OrderType): void {
+    reset()
+    orderType.value = type
+  }
+
   function addPoint(): void {
+    if (isSinglePoint.value) {
+      return
+    }
     points.value.push(createPoint())
   }
 
@@ -47,7 +62,7 @@ export const useOrderCreateStore = defineStore('orderCreate', () => {
   }
 
   function setPoints(next: DraftOrderPoint[]): void {
-    points.value = next
+    points.value = isSinglePoint.value ? next.slice(0, 1) : next
   }
 
   function setPointLocation(clientId: string, location: { lat: number; lon: number; address: string | null }): void {
@@ -62,6 +77,7 @@ export const useOrderCreateStore = defineStore('orderCreate', () => {
 
   function payload(): CreateOrderPayload {
     return {
+      order_type_id: Number(orderType.value?.id),
       description: description.value.trim(),
       cost: Number(cost.value),
       points: points.value.map((point, index) => ({
@@ -76,6 +92,7 @@ export const useOrderCreateStore = defineStore('orderCreate', () => {
 
   function reset(): void {
     step.value = 1
+    orderType.value = null
     points.value = [createPoint()]
     cost.value = null
     description.value = ''
@@ -85,13 +102,16 @@ export const useOrderCreateStore = defineStore('orderCreate', () => {
 
   return {
     step,
+    orderType,
     points,
     cost,
     description,
     submitting,
     error,
+    isSinglePoint,
     canGoStep2,
     canGoStep3,
+    begin,
     addPoint,
     removePoint,
     setPoints,

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
 import Toast from 'primevue/toast'
-import { useRealtime, useTheme } from '@/composables'
+import { usePwaInstall, useRealtime, useTheme, useWebPush } from '@/composables'
 
 useTheme()
 useRealtime()
+usePwaInstall()
+useWebPush()
 </script>
 
 <template>

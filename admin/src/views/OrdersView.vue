@@ -106,6 +106,7 @@ function costLabel(value: number): string {
         <thead class="border-b border-border-subtle text-text-secondary dark:border-white/10">
           <tr>
             <th class="px-4 py-3 font-medium">ID</th>
+            <th class="px-4 py-3 font-medium">Вид</th>
             <th class="px-4 py-3 font-medium">Описание</th>
             <th class="px-4 py-3 font-medium">Автор</th>
             <th class="px-4 py-3 font-medium">Стоимость</th>
@@ -120,6 +121,7 @@ function costLabel(value: number): string {
             class="border-b border-border-subtle align-top last:border-0 dark:border-white/10"
           >
             <td class="px-4 py-3 text-text-secondary">{{ order.id }}</td>
+            <td class="px-4 py-3">{{ order.order_type?.name || '—' }}</td>
             <td class="px-4 py-3">
               <p>{{ order.description || 'Без примечания' }}</p>
               <ul v-if="order.points.length" class="mt-2 space-y-1 text-xs text-text-secondary">

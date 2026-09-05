@@ -64,6 +64,7 @@ const costLabel = computed(() =>
       </p>
     </div>
     <p class="mt-2 text-sm text-text-secondary">
+      <span v-if="order.order_type?.name">{{ order.order_type.name }} · </span>
       {{ pointsLabel }}
       <span v-if="order.user?.name"> · {{ order.user.name }}</span>
     </p>

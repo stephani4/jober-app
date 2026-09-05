@@ -2,6 +2,13 @@ import { z } from 'zod'
 
 export const orderStatusSchema = z.enum(['moderate', 'wait', 'process', 'complete', 'cancel'])
 
+export const orderTypeSchema = z.object({
+  id: z.number().int().positive(),
+  name: z.string(),
+  description: z.string(),
+  max_points: z.number().int().positive().optional(),
+})
+
 export const orderPointSchema = z.object({
   id: z.number().int().positive(),
   description: z.string(),
@@ -21,6 +28,8 @@ export const orderUserSchema = z.object({
 export const orderSchema = z.object({
   id: z.number().int().positive(),
   user_id: z.number().int().positive(),
+  order_type_id: z.number().int().positive().nullable().optional(),
+  order_type: orderTypeSchema.nullable().optional(),
   description: z.string(),
   cost: z.number(),
   status: orderStatusSchema.default('wait'),

@@ -1,16 +1,23 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { configureVkMapsSdk, defaultMapCenter, defaultMapLocation, vkMapsStyle } from '@/config/vkMaps'
+import { requestCurrentPosition } from '@/composables/useGeolocation'
 import { useVkMapsPlaceSearch } from '@/composables/useVkMapsPlaceSearch'
 import {
   vkMapsGeocodingService,
   type VkMapsSuggestItem,
 } from '@/services/VkMapsGeocodingService'
 
-const props = defineProps<{
-  lat?: number | null
-  lon?: number | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    lat?: number | null
+    lon?: number | null
+    title?: string
+  }>(),
+  {
+    title: 'Выберите точку на карте',
+  },
+)
 
 const emit = defineEmits<{
   select: [payload: { lat: number; lon: number; address: string | null }]
@@ -20,12 +27,11 @@ const emit = defineEmits<{
 const container = ref<HTMLElement | null>(null)
 let map: InstanceType<typeof mmrgl.Map> | null = null
 let marker: InstanceType<typeof mmrgl.Marker> | null = null
+let userMarker: InstanceType<typeof mmrgl.Marker> | null = null
+let disposed = false
 
-function initialCenter(): [number, number] {
-  if (props.lon != null && props.lat != null) {
-    return [props.lon, props.lat]
-  }
-  return defaultMapCenter
+function hasSelectedPoint(): boolean {
+  return props.lon != null && props.lat != null
 }
 
 function currentLocation(): { lat: number; lon: number } | null {
@@ -33,8 +39,8 @@ function currentLocation(): { lat: number; lon: number } | null {
     const center = map.getCenter()
     return { lat: center.lat, lon: center.lng }
   }
-  if (props.lat != null && props.lon != null) {
-    return { lat: props.lat, lon: props.lon }
+  if (hasSelectedPoint()) {
+    return { lat: props.lat as number, lon: props.lon as number }
   }
   return { lat: defaultMapLocation.lat, lon: defaultMapLocation.lon }
 }
@@ -51,6 +57,32 @@ const {
   close,
   reopen,
 } = useVkMapsPlaceSearch(currentLocation)
+
+function createUserMarkerElement(): HTMLDivElement {
+  const el = document.createElement('div')
+  el.className = 'jober-map-user'
+  el.title = 'Вы здесь'
+  const pulse = document.createElement('span')
+  pulse.className = 'jober-map-user-pulse'
+  const dot = document.createElement('span')
+  dot.className = 'jober-map-user-dot'
+  el.appendChild(pulse)
+  el.appendChild(dot)
+  return el
+}
+
+function placeUserMarker(lngLat: [number, number]): void {
+  if (!map) {
+    return
+  }
+  if (!userMarker) {
+    userMarker = new mmrgl.Marker({ element: createUserMarkerElement(), anchor: 'center' })
+      .setLngLat(lngLat)
+      .addTo(map)
+    return
+  }
+  userMarker.setLngLat(lngLat)
+}
 
 function placeMarker(lngLat: [number, number]): void {
   if (!map) {
@@ -91,15 +123,27 @@ async function onPickSuggestion(item: VkMapsSuggestItem): Promise<void> {
 
 onMounted(async () => {
   await nextTick()
-  if (!container.value) {
+  if (!container.value || disposed) {
+    return
+  }
+
+  const userPosition = await requestCurrentPosition(2500)
+  if (!container.value || disposed) {
     return
   }
 
   configureVkMapsSdk(mmrgl)
+  const center: [number, number] = hasSelectedPoint()
+    ? [props.lon as number, props.lat as number]
+    : userPosition
+      ? [userPosition.lon, userPosition.lat]
+      : defaultMapCenter
+  const zoom = hasSelectedPoint() || userPosition ? 15 : 10
+
   map = new mmrgl.Map({
     container: container.value,
-    center: initialCenter(),
-    zoom: props.lat != null ? 15 : 10,
+    center,
+    zoom,
     style: vkMapsStyle,
     interactive: true,
     attributionControl: false,
@@ -107,8 +151,11 @@ onMounted(async () => {
 
   map.on('load', () => {
     map?.resize()
-    if (props.lat != null && props.lon != null) {
-      placeMarker([props.lon, props.lat])
+    if (hasSelectedPoint()) {
+      placeMarker([props.lon as number, props.lat as number])
+    }
+    if (userPosition) {
+      placeUserMarker([userPosition.lon, userPosition.lat])
     }
   })
 
@@ -116,9 +163,11 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  disposed = true
   map?.remove()
   map = null
   marker = null
+  userMarker = null
 })
 </script>
 
@@ -126,7 +175,7 @@ onBeforeUnmount(() => {
   <div class="fixed inset-0 z-[80] flex flex-col bg-surface-hero">
     <div class="relative z-10 px-4 pb-3 text-text-on-hero">
       <div class="flex items-center justify-between py-3">
-        <p class="text-base">Выберите точку на карте</p>
+        <p class="text-base">{{ title }}</p>
         <button
           type="button"
           class="rounded-full border border-border-hero-control px-4 py-2 text-sm"
@@ -214,3 +263,40 @@ onBeforeUnmount(() => {
     <div ref="container" class="min-h-0 flex-1" />
   </div>
 </template>
+
+<style>
+.jober-map-user {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+}
+
+.jober-map-user-dot {
+  position: absolute;
+  inset: 4px;
+  border-radius: 9999px;
+  background: #0ea5e9;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 2px rgb(14 165 233 / 0.35);
+}
+
+.jober-map-user-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: rgb(14 165 233 / 0.35);
+  animation: jober-map-user-pulse 1.8s ease-out infinite;
+}
+
+@keyframes jober-map-user-pulse {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+</style>

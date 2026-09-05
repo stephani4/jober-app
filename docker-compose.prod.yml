@@ -1,0 +1,57 @@
+name: jober-prod
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: jober-postgres
+    environment:
+      POSTGRES_DB: jober
+      POSTGRES_USER: jober
+      POSTGRES_PASSWORD: jober
+    command: ["postgres", "-c", "shared_buffers=64MB", "-c", "max_connections=50"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jober -d jober"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_VK_MAPS_API_KEY: ${VITE_VK_MAPS_API_KEY}
+    image: jober-app:prod
+    container_name: jober-app
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      APP_URL: https://jober-app.ru
+      FRONTEND_URL: https://jober-app.ru
+      ADMIN_URL: https://jober-app.ru/admin
+      SANCTUM_STATEFUL_DOMAINS: jober-app.ru
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./deploy/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
+      - ./deploy/supervisord.conf:/etc/supervisor/conf.d/jober.conf:ro
+      - ./deploy/zz-www-pool.conf:/usr/local/etc/php-fpm.d/zz-www-pool.conf:ro
+      - ./deploy/nginx.ssl.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/nginx-locations.conf:/etc/nginx/nginx-locations.conf:ro
+      - ./certs/fullchain.pem:/etc/nginx/certs/fullchain.pem:ro
+      - ./certs/privkey.pem:/etc/nginx/certs/privkey.pem:ro
+
+volumes:
+  postgres_data:
+    name: jober_pg16_data
+    external: true

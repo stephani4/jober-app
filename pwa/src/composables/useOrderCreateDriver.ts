@@ -12,18 +12,22 @@ export function useOrderCreateDriver() {
   const orders = useOrdersStore()
   const {
     step,
+    orderType,
     points,
     cost,
     description,
     submitting,
     error,
+    isSinglePoint,
     canGoStep2,
     canGoStep3,
   } = storeToRefs(draft)
 
   function next(): boolean {
     if (step.value === 1 && !canGoStep2.value) {
-      error.value = 'Заполните описание и выберите точку на карте для каждой позиции.'
+      error.value = isSinglePoint.value
+        ? 'Опишите, что нужно купить, и укажите точку доставки на карте.'
+        : 'Заполните описание и выберите точку на карте для каждой позиции.'
       return false
     }
 
@@ -58,7 +62,6 @@ export function useOrderCreateDriver() {
     try {
       const order = await orderService.create(parsed.data)
       orders.upsert(order)
-      draft.reset()
       return true
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Не удалось создать заказ.'
@@ -70,11 +73,13 @@ export function useOrderCreateDriver() {
 
   return {
     step,
+    orderType,
     points,
     cost,
     description,
     submitting,
     error,
+    isSinglePoint,
     canGoStep2,
     canGoStep3,
     next,
