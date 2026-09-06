@@ -50,6 +50,10 @@
       {
         "name": "notification",
         "proxy_enabled": true
+      },
+      {
+        "name": "profile",
+        "proxy_enabled": true
       }
     ]
   }

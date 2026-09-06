@@ -192,6 +192,16 @@ export class RealtimeService {
     const data = await centrifugoClient.rpc<unknown>('notification:unreadCount')
     return notificationUnreadCountSchema.parse(data).unread_count
   }
+
+  async listWorkingAreas(): Promise<any[]> {
+    const data = await centrifugoClient.rpc<unknown>('profile:areas')
+    return Array.isArray(data) ? data : []
+  }
+
+  async updateProfile(payload: unknown): Promise<any> {
+    const data = await centrifugoClient.rpc<unknown>('profile:update', payload)
+    return data
+  }
 }
 
 function zArray(data: unknown): Order[] {

@@ -85,6 +85,12 @@ const router = createRouter({
           meta: { title: 'Профиль', nav: 'profile', hero: 'profile' },
         },
         {
+          path: 'profile/edit',
+          name: 'profile-edit',
+          component: () => import('@/views/profile/EditProfileView.vue'),
+          meta: { title: 'Редактирование профиля', showBack: true, hideNav: true },
+        },
+        {
           path: 'notifications',
           name: 'notifications',
           component: () => import('@/views/notifications/NotifiesView.vue'),

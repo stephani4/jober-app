@@ -21,10 +21,11 @@ const pushLabel = computed(() => {
 })
 
 const menuItems = [
-  { label: 'Редактировать профиль', icon: 'user' },
+  { label: 'Редактировать профиль', icon: 'user', action: () => router.push({ name: 'profile-edit' }) },
   { label: 'Настройки', icon: 'settings' },
   { label: 'Помощь', icon: 'help' },
 ] as const
+
 
 async function onInstall(): Promise<void> {
   if (canInstall.value) {
@@ -107,6 +108,7 @@ async function onLogout(): Promise<void> {
       :key="item.label"
       type="button"
       class="flex w-full items-center justify-between rounded-card border border-border-subtle bg-surface-card px-4 py-4 text-left text-text-primary shadow-[var(--shadow-card)] transition hover:bg-surface-muted dark:border-white/10 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+      @click="item.action ? item.action() : null"
     >
       <span>{{ item.label }}</span>
       <svg

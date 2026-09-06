@@ -24,6 +24,7 @@ function onWatch(order: Order): void {
         class="rounded-card border border-border-subtle bg-surface-card p-4 shadow-[var(--shadow-card)] dark:border-white/10 dark:bg-zinc-900"
       >
         <p class="text-sm text-text-secondary">Активные</p>
+        <p class="text-xs text-text-secondary/60">Количество ваших активных заказов</p>
         <p class="mt-2 text-3xl text-text-primary dark:text-zinc-100">{{ items.length }}</p>
       </div>
       <div

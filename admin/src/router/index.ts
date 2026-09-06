@@ -30,6 +30,21 @@ const router = createRouter({
           name: 'orders',
           component: () => import('@/views/OrdersView.vue'),
         },
+        {
+          path: 'working-areas',
+          name: 'working-areas',
+          component: () => import('@/views/WorkingAreasView.vue'),
+        },
+        {
+          path: 'working-areas/create',
+          name: 'working-areas-create',
+          component: () => import('@/views/WorkingAreaFormView.vue'),
+        },
+        {
+          path: 'working-areas/edit/:id',
+          name: 'working-areas-edit',
+          component: () => import('@/views/WorkingAreaFormView.vue'),
+        },
       ],
     },
   ],

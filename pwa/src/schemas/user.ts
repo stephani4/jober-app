@@ -8,6 +8,7 @@ export const userSchema = z.object({
   email: z.string().email(),
   role: userRoleSchema,
   birth_date: z.string().nullable().optional(),
+  working_area_id: z.number().int().positive().nullable().optional(),
 })
 
 export type UserRole = z.infer<typeof userRoleSchema>
