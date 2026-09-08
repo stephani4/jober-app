@@ -16,6 +16,8 @@ function upsertOrder(list: Order[], order: Order): Order[] {
 
 export const useOrdersStore = defineStore('orders', () => {
   const items = ref<Order[]>([])
+  const responsesCount = ref(0)
+  const availableExecutorsCount = ref(0)
   const loaded = ref(false)
 
   function upsert(order: Order): void {
@@ -31,16 +33,30 @@ export const useOrdersStore = defineStore('orders', () => {
     loaded.value = true
   }
 
+  async function fetchResponsesCount(): Promise<void> {
+    responsesCount.value = await orderService.getResponsesCount()
+  }
+
+  async function fetchAvailableExecutorsCount(): Promise<void> {
+    availableExecutorsCount.value = await orderService.getAvailableExecutorsCount()
+  }
+
   function reset(): void {
     items.value = []
+    responsesCount.value = 0
+    availableExecutorsCount.value = 0
     loaded.value = false
   }
 
   return {
     items,
+    responsesCount,
+    availableExecutorsCount,
     loaded,
     upsert,
     fetchMine,
+    fetchResponsesCount,
+    fetchAvailableExecutorsCount,
     reset,
   }
 })

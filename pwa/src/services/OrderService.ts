@@ -44,6 +44,14 @@ export class OrderService {
   completePoint(orderId: number, orderPointId: number): Promise<OrderExecuting> {
     return realtimeService.completePoint(orderId, orderPointId)
   }
+
+  getResponsesCount(): Promise<number> {
+    return realtimeService.responsesCount()
+  }
+
+  getAvailableExecutorsCount(): Promise<number> {
+    return realtimeService.getAvailableExecutorsCount()
+  }
 }
 
 export const orderService = new OrderService()

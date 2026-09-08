@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  */
 #[Fillable([
     'user_id',
+    'order_type_id',
     'description',
     'cost',
     'status',
@@ -40,6 +41,14 @@ class Order extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Вид заказа.
+     */
+    public function orderType(): BelongsTo
+    {
+        return $this->belongsTo(OrderType::class);
     }
 
     /**

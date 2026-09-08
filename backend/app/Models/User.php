@@ -19,6 +19,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
     'birth_date',
     'role',
     'personal_data_consent_at',
+    'working_area_id',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements JWTSubject
@@ -50,6 +51,14 @@ class User extends Authenticatable implements JWTSubject
     }
 
     /**
+     * Рабочая зона пользователя.
+     */
+    public function workingArea()
+    {
+        return $this->belongsTo(WorkingArea::class);
+    }
+
+    /**
      * Заказы, которые создал пользователь.
      */
     public function orders(): HasMany
@@ -71,5 +80,13 @@ class User extends Authenticatable implements JWTSubject
     public function orderMessages(): HasMany
     {
         return $this->hasMany(OrderMessage::class);
+    }
+
+    /**
+     * Web Push-подписки устройств.
+     */
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
     }
 }

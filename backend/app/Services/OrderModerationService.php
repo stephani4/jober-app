@@ -31,7 +31,7 @@ class OrderModerationService
      */
     public function process(int $orderId): void
     {
-        $order = Order::query()->with(['points', 'user', 'currentExecuting'])->find($orderId);
+        $order = Order::query()->with(['points', 'user', 'currentExecuting', 'orderType'])->find($orderId);
         if (! $order || $order->status !== OrderStatus::Moderate) {
             return;
         }

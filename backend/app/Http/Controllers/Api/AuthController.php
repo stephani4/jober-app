@@ -43,6 +43,7 @@ class AuthController extends Controller
                 'email' => $payload['user']->email,
                 'role' => $payload['user']->role?->value,
                 'birth_date' => $payload['user']->birth_date?->toDateString(),
+                'working_area_id' => $payload['user']->working_area_id,
             ],
         ]);
     }
@@ -57,6 +58,7 @@ class AuthController extends Controller
             'email' => $user?->email,
             'role' => $user?->role?->value,
             'birth_date' => $user?->birth_date?->toDateString(),
+            'working_area_id' => $user?->working_area_id,
         ]);
     }
 

@@ -31,7 +31,7 @@ class AdminOrderService
         $limit = self::PAGE_SIZE;
 
         $query = Order::query()
-            ->with(['points', 'user', 'currentExecuting'])
+            ->with(['points', 'user', 'currentExecuting', 'orderType'])
             ->orderByDesc('id');
 
         if ($payload['status'] !== null) {

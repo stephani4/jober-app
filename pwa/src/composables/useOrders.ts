@@ -6,7 +6,7 @@ import { useRealtimeStore } from '@/stores/realtime'
 export function useOrders() {
   const store = useOrdersStore()
   const realtime = useRealtimeStore()
-  const { items, loaded } = storeToRefs(store)
+  const { items, responsesCount, availableExecutorsCount, loaded } = storeToRefs(store)
   const { status } = storeToRefs(realtime)
 
   watch(
@@ -14,6 +14,8 @@ export function useOrders() {
     (value) => {
       if (value === 'connected' && !loaded.value) {
         void store.fetchMine()
+        void store.fetchResponsesCount()
+        void store.fetchAvailableExecutorsCount()
       }
     },
     { immediate: true },
@@ -21,8 +23,12 @@ export function useOrders() {
 
   return {
     items,
+    responsesCount,
+    availableExecutorsCount,
     loaded,
     fetchMine: () => store.fetchMine(),
+    fetchResponsesCount: () => store.fetchResponsesCount(),
+    fetchAvailableExecutorsCount: () => store.fetchAvailableExecutorsCount(),
     upsert: store.upsert,
   }
 }

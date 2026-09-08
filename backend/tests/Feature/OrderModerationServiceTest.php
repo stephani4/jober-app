@@ -7,6 +7,7 @@ use App\Enums\UserRole;
 use App\Jobs\ModerateOrderJob;
 use App\Models\Order;
 use App\Models\OrderPoint;
+use App\Models\OrderType;
 use App\Models\User;
 use App\Moderation\OrderModerationRule;
 use App\Services\Centrifugo\CentrifugoClient;
@@ -124,6 +125,7 @@ class OrderModerationServiceTest extends TestCase
 
         $user = User::factory()->create(['role' => UserRole::Customer]);
         app(OrderRpcService::class)->create($user, [
+            'order_type_id' => OrderType::ERRAND,
             'description' => 'Срочно',
             'cost' => 1000,
             'points' => [[

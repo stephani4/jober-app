@@ -7,6 +7,7 @@ use App\Http\Resources\OrderExecutingResource;
 use App\Http\Resources\OrderResource;
 use App\Jobs\ModerateOrderJob;
 use App\Models\Order;
+use App\Models\OrderExecuting;
 use App\Models\User;
 use App\Services\Centrifugo\CentrifugoClient;
 use App\Services\Centrifugo\CentrifugoTokenService;
@@ -208,6 +209,34 @@ class OrderRpcService
         }
 
         return $this->executingToArray($result);
+    }
+
+    /**
+     * Количество исполнителей онлайн без активного заказа.
+     *
+     * @return int
+     */
+    public function availableExecutorsCount(): int
+    {
+        return User::query()
+            ->where('role', \App\Enums\UserRole::Executor)
+            ->whereDoesntHave('orderExecutings', function ($query) {
+                $query->where('status', OrderExecutingStatus::Process);
+            })
+            ->count();
+    }
+
+    /**
+     * Количество откликов исполнителя за сегодня.
+     *
+     * @return int
+     */
+    public function responsesCount(User $user): int
+    {
+        return OrderExecuting::query()
+            ->where('executor_id', $user->id)
+            ->whereDate('created_at', now()->toDateString())
+            ->count();
     }
 
     /**

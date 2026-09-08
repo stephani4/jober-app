@@ -6,10 +6,12 @@ use App\Enums\OrderStatus;
 use App\Enums\UserRole;
 use App\Models\Order;
 use App\Models\OrderPoint;
+use App\Models\OrderType;
 use App\Models\User;
 use App\Services\OrderExecutingService;
 use App\Services\OrderService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class OrderServiceTest extends TestCase
@@ -21,6 +23,7 @@ class OrderServiceTest extends TestCase
         $user = User::factory()->create();
 
         $order = app(OrderService::class)->create($user, [
+            'order_type_id' => OrderType::ERRAND,
             'description' => 'Срочно',
             'cost' => 2500,
             'points' => [
@@ -40,12 +43,72 @@ class OrderServiceTest extends TestCase
         ]);
 
         $this->assertSame($user->id, $order->user_id);
+        $this->assertSame(OrderType::ERRAND, $order->order_type_id);
         $this->assertSame('Срочно', $order->description);
         $this->assertEquals(2500, (float) $order->cost);
         $this->assertCount(2, $order->points);
         $this->assertSame(1, $order->points[0]->position);
         $this->assertSame(2, $order->points[1]->position);
         $this->assertSame('moderate', $order->status->value);
+    }
+
+    public function test_buy_and_deliver_accepts_single_point(): void
+    {
+        $user = User::factory()->create();
+
+        $order = app(OrderService::class)->create($user, [
+            'order_type_id' => OrderType::BUY_AND_DELIVER,
+            'cost' => 800,
+            'points' => [[
+                'description' => 'Молоко 2л и хлеб',
+                'address' => 'Кемерово, Ленина 1',
+                'lat' => 55.3545,
+                'lon' => 86.0893,
+            ]],
+        ]);
+
+        $this->assertSame(OrderType::BUY_AND_DELIVER, $order->order_type_id);
+        $this->assertCount(1, $order->points);
+    }
+
+    public function test_buy_and_deliver_rejects_multiple_points(): void
+    {
+        $user = User::factory()->create();
+
+        $this->expectException(ValidationException::class);
+
+        app(OrderService::class)->create($user, [
+            'order_type_id' => OrderType::BUY_AND_DELIVER,
+            'cost' => 800,
+            'points' => [
+                [
+                    'description' => 'Купить молоко',
+                    'lat' => 55.3545,
+                    'lon' => 86.0893,
+                ],
+                [
+                    'description' => 'Вторая точка',
+                    'lat' => 55.36,
+                    'lon' => 86.09,
+                ],
+            ],
+        ]);
+    }
+
+    public function test_create_requires_order_type(): void
+    {
+        $user = User::factory()->create();
+
+        $this->expectException(ValidationException::class);
+
+        app(OrderService::class)->create($user, [
+            'cost' => 800,
+            'points' => [[
+                'description' => 'Забрать документы',
+                'lat' => 55.757,
+                'lon' => 37.615,
+            ]],
+        ]);
     }
 
     public function test_feed_excludes_orders_with_executor(): void

@@ -150,6 +150,14 @@ export class RealtimeService {
     return orderExecutingSchema.parse(data)
   }
 
+  async responsesCount(): Promise<number> {
+    return await centrifugoClient.rpc<number>('order:responses_count')
+  }
+
+  async getAvailableExecutorsCount(): Promise<number> {
+    return await centrifugoClient.rpc<number>('order:available_executors_count')
+  }
+
   onOrderMessage(handler: (event: OrderMessageEvent) => void): () => void {
     return centrifugoClient.onPublication((_channel, data) => {
       const parsed = orderMessageEventSchema.safeParse(data)

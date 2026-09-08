@@ -16,9 +16,15 @@ class OrderResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $this->resource->loadMissing('orderType');
+
         return [
             'id' => $this->id,
             'user_id' => $this->user_id,
+            'order_type_id' => $this->order_type_id,
+            'order_type' => $this->orderType
+                ? OrderTypeResource::make($this->orderType)->resolve($request)
+                : null,
             'description' => $this->description,
             'cost' => (float) $this->cost,
             'status' => $this->status->value,

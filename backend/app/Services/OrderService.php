@@ -4,10 +4,12 @@ namespace App\Services;
 
 use App\Enums\OrderStatus;
 use App\Models\Order;
+use App\Models\OrderType;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -27,6 +29,7 @@ class OrderService
         return DB::transaction(function () use ($user, $payload) {
             $order = Order::query()->create([
                 'user_id' => $user->id,
+                'order_type_id' => $payload['order_type_id'],
                 'description' => $payload['description'] ?? '',
                 'cost' => $payload['cost'],
                 'status' => OrderStatus::Moderate,
@@ -44,7 +47,7 @@ class OrderService
                 ]);
             }
 
-            return $order->load(['points', 'user', 'currentExecuting']);
+            return $order->load(['points', 'user', 'currentExecuting', 'orderType']);
         });
     }
 
@@ -56,7 +59,7 @@ class OrderService
     public function listMine(User $user): Collection
     {
         return Order::query()
-            ->with(['points', 'user', 'currentExecuting'])
+            ->with(['points', 'user', 'currentExecuting', 'orderType'])
             ->where('user_id', $user->id)
             ->whereIn('status', [
                 OrderStatus::Moderate,
@@ -79,7 +82,7 @@ class OrderService
         $limit = self::HISTORY_PAGE_SIZE;
 
         $query = Order::query()
-            ->with(['points', 'user', 'currentExecuting'])
+            ->with(['points', 'user', 'currentExecuting', 'orderType'])
             ->where('user_id', $user->id)
             ->whereIn('status', [
                 OrderStatus::Complete,
@@ -109,7 +112,7 @@ class OrderService
     public function listFeed(): Collection
     {
         return Order::query()
-            ->with(['points', 'user', 'currentExecuting'])
+            ->with(['points', 'user', 'currentExecuting', 'orderType'])
             ->where('status', OrderStatus::Wait)
             ->latest()
             ->limit(50)
@@ -118,22 +121,34 @@ class OrderService
 
     /**
      * @param  array<string, mixed>  $data
-     * @return array{description?: string, cost: float|int|string, points: list<array<string, mixed>>}
+     * @return array{order_type_id: int, description?: string, cost: float|int|string, points: list<array<string, mixed>>}
      */
     private function validateCreate(array $data): array
     {
+        $typeId = (int) ($data['order_type_id'] ?? 0);
+        $isBuyAndDeliver = $typeId === OrderType::BUY_AND_DELIVER;
+        $pointsMax = $isBuyAndDeliver ? 1 : OrderType::DEFAULT_MAX_POINTS;
+
         $validator = Validator::make($data, [
+            'order_type_id' => ['required', 'integer', Rule::exists('order_types', 'id')],
             'description' => ['nullable', 'string', 'max:5000'],
             'cost' => ['required', 'numeric', 'min:0.01'],
-            'points' => ['required', 'array', 'min:1', 'max:20'],
+            'points' => ['required', 'array', 'min:1', 'max:'.$pointsMax],
             'points.*.description' => ['required', 'string', 'max:2000'],
             'points.*.address' => ['nullable', 'string', 'max:500'],
             'points.*.lat' => ['required', 'numeric', 'between:-90,90'],
             'points.*.lon' => ['required', 'numeric', 'between:-180,180'],
         ], [
+            'order_type_id.required' => 'Выберите вид заказа.',
+            'order_type_id.exists' => 'Выберите вид заказа.',
             'cost.min' => 'Укажите стоимость заказа.',
             'points.min' => 'Добавьте хотя бы одну точку.',
-            'points.*.description.required' => 'Опишите, что нужно сделать в точке.',
+            'points.max' => $isBuyAndDeliver
+                ? 'Для этого вида заказа нужна одна точка доставки.'
+                : 'Слишком много точек маршрута.',
+            'points.*.description.required' => $isBuyAndDeliver
+                ? 'Опишите, что нужно купить.'
+                : 'Опишите, что нужно сделать в точке.',
             'points.*.lat.required' => 'Выберите точку на карте.',
             'points.*.lon.required' => 'Выберите точку на карте.',
         ]);
@@ -142,7 +157,7 @@ class OrderService
             throw new ValidationException($validator);
         }
 
-        /** @var array{description?: string, cost: float|int|string, points: list<array<string, mixed>>} $validated */
+        /** @var array{order_type_id: int, description?: string, cost: float|int|string, points: list<array<string, mixed>>} $validated */
         $validated = $validator->validated();
 
         return $validated;

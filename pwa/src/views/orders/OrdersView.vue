@@ -6,7 +6,7 @@ import type { Order } from '@/schemas/order'
 
 const router = useRouter()
 const { user } = useAuth()
-const { items, loaded } = useOrders()
+const { items, responsesCount, availableExecutorsCount, loaded } = useOrders()
 
 function canWatch(order: Order): boolean {
   return order.status === 'process' && order.user_id === user.value?.id
@@ -21,6 +21,13 @@ function onWatch(order: Order): void {
   <section class="space-y-4">
     <div class="grid gap-3 sm:grid-cols-3">
       <div
+          class="rounded-card border border-border-subtle bg-surface-card p-4 shadow-[var(--shadow-card)] dark:border-white/10 dark:bg-zinc-900"
+      >
+        <p class="text-sm text-text-secondary">Ожидают вашего заказа</p>
+        <p class="text-xs text-text-secondary/60">Свободные исполнители онлайн</p>
+        <p class="mt-2 text-3xl text-text-primary dark:text-zinc-100">{{ availableExecutorsCount }}</p>
+      </div>
+      <div
         class="rounded-card border border-border-subtle bg-surface-card p-4 shadow-[var(--shadow-card)] dark:border-white/10 dark:bg-zinc-900"
       >
         <p class="text-sm text-text-secondary">Активные</p>
@@ -28,10 +35,12 @@ function onWatch(order: Order): void {
         <p class="mt-2 text-3xl text-text-primary dark:text-zinc-100">{{ items.length }}</p>
       </div>
       <div
+        v-if="user?.role === 'executor'"
         class="rounded-card border border-border-subtle bg-surface-card p-4 shadow-[var(--shadow-card)] dark:border-white/10 dark:bg-zinc-900"
       >
         <p class="text-sm text-text-secondary">Мои отклики</p>
-        <p class="mt-2 text-3xl text-text-primary dark:text-zinc-100">0</p>
+        <p class="text-xs text-text-secondary/60">Количество откликов на заказы сегодня</p>
+        <p class="mt-2 text-3xl text-text-primary dark:text-zinc-100">{{ responsesCount }}</p>
       </div>
       <div
         class="rounded-card border border-border-subtle bg-surface-card p-4 shadow-[var(--shadow-card)] dark:border-white/10 dark:bg-zinc-900"

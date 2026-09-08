@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Http\Resources\NotificationResource;
+use App\Jobs\SendWebPushJob;
 use App\Models\OrderExecuting;
 use App\Models\User;
 use App\Notifications\OrderCompletedNotification;
@@ -141,6 +142,24 @@ class NotificationService
         }
 
         $this->publishCreated($user, $record);
+        $this->dispatchWebPush($user, $record);
+    }
+
+    /**
+     * Дублирует уведомление на устройства через Web Push (телефон, установленное PWA).
+     */
+    private function dispatchWebPush(User $user, DatabaseNotification $record): void
+    {
+        $data = is_array($record->data) ? $record->data : [];
+
+        SendWebPushJob::dispatch($user->id, [
+            'title' => (string) ($data['title'] ?? 'Jober'),
+            'body' => (string) ($data['body'] ?? ''),
+            'url' => '/notifications',
+            'tag' => 'notification-'.$record->id,
+            'notification_id' => (string) $record->id,
+            'order_id' => isset($data['order_id']) ? (int) $data['order_id'] : null,
+        ]);
     }
 
     private function publishCreated(User $user, DatabaseNotification $record): void

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\NotificationRpcService;
 use App\Services\OrderMessageRpcService;
 use App\Services\OrderRpcService;
+use App\Services\UserProfileRpcService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -21,6 +22,7 @@ class RpcController extends Controller
         private readonly OrderRpcService $orders,
         private readonly OrderMessageRpcService $messages,
         private readonly NotificationRpcService $notifications,
+        private readonly UserProfileRpcService $profile,
     ) {}
 
     public function __invoke(Request $request): JsonResponse
@@ -33,6 +35,13 @@ class RpcController extends Controller
         }
 
         $method = (string) $request->input('method');
+        
+        // Log incoming RPC method for debugging
+        \Illuminate\Support\Facades\Log::info('Incoming RPC method: ' . $method, [
+            'all_inputs' => $request->all(),
+            'user_id' => $userId
+        ]);
+
         /** @var array<string, mixed> $data */
         $data = is_array($request->input('data')) ? $request->input('data') : [];
 
@@ -46,6 +55,8 @@ class RpcController extends Controller
                 'order:executing' => $this->orders->executing($user, $data),
                 'order:watching' => $this->orders->watching($user, $data),
                 'order:active' => $this->orders->active($user),
+                'order:responses_count' => $this->orders->responsesCount($user),
+                'order:available_executors_count' => $this->orders->availableExecutorsCount(),
                 'order:location' => $this->orders->location($user, $data),
                 'order:completePoint' => $this->orders->completePoint($user, $data),
                 'order:messages' => $this->messages->list($user, $data),
@@ -53,6 +64,8 @@ class RpcController extends Controller
                 'notification:list' => $this->notifications->list($user, $data),
                 'notification:read' => $this->notifications->read($user, $data),
                 'notification:unreadCount' => $this->notifications->unreadCount($user),
+                'profile:areas' => $this->profile->listAreas($user),
+                'profile:update' => $this->profile->update($user, $data),
                 default => null,
             };
         } catch (ValidationException $exception) {
