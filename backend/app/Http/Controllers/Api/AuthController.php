@@ -59,6 +59,7 @@ class AuthController extends Controller
             'role' => $user?->role?->value,
             'birth_date' => $user?->birth_date?->toDateString(),
             'working_area_id' => $user?->working_area_id,
+            'created_at' => $user?->created_at?->toISOString(),
         ]);
     }
 

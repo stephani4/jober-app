@@ -19,7 +19,8 @@ use Illuminate\Validation\ValidationException;
 class OrderExecutingService
 {
     /**
-     * Начинает выполнение заказа (status=process) или возвращает уже начатое.
+     * Начинает выполнение заказа (status=process) или возвращает уже начатое,
+     * включая выполнения на этапе подтверждения кодом.
      *
      * @param  array<string, mixed>  $data
      */
@@ -45,9 +46,11 @@ class OrderExecutingService
         return DB::transaction(function () use ($executor, $order) {
             Order::query()->whereKey($order->id)->lockForUpdate()->first();
 
+            // Препятствуют только активные выполнения: отменённые и завершённые не мешают новому старту.
             $takenByOther = OrderExecuting::query()
                 ->where('order_id', $order->id)
                 ->where('executor_id', '!=', $executor->id)
+                ->where('status', OrderExecutingStatus::Process)
                 ->exists();
 
             if ($takenByOther) {
@@ -56,17 +59,14 @@ class OrderExecutingService
                 ]);
             }
 
+            // Повторный старт возвращает активное выполнение: в работе или на этапе
+            // подтверждения кодом — исполнитель не должен терять доступ к экрану.
             $executing = OrderExecuting::query()
                 ->where('order_id', $order->id)
                 ->where('executor_id', $executor->id)
+                ->whereIn('status', [OrderExecutingStatus::Process, OrderExecutingStatus::Confirmation])
                 ->lockForUpdate()
                 ->first();
-
-            if ($executing?->status === OrderExecutingStatus::Complete) {
-                throw ValidationException::withMessages([
-                    'order_id' => 'Вы уже завершили этот заказ.',
-                ]);
-            }
 
             if ($executing) {
                 return $this->load($executing);
@@ -102,7 +102,7 @@ class OrderExecutingService
     }
 
     /**
-     * Текущее назначение исполнителя на заказ.
+     * Текущее назначение исполнителя на заказ, включая этап подтверждения кодом.
      *
      * @param  array<string, mixed>  $data
      */
@@ -114,6 +114,10 @@ class OrderExecutingService
         $executing = OrderExecuting::query()
             ->where('order_id', $payload['order_id'])
             ->where('executor_id', $executor->id)
+            ->whereIn('status', [
+                OrderExecutingStatus::Process,
+                OrderExecutingStatus::Confirmation,
+            ])
             ->first();
 
         if (! $executing) {
@@ -138,21 +142,17 @@ class OrderExecutingService
         $payload = $this->validateCompletePoint($data);
 
         return DB::transaction(function () use ($executor, $payload) {
+            // Работаем только с активным выполнением: после отказа остаются отменённые записи.
             $executing = OrderExecuting::query()
                 ->where('order_id', $payload['order_id'])
                 ->where('executor_id', $executor->id)
+                ->where('status', OrderExecutingStatus::Process)
                 ->lockForUpdate()
                 ->first();
 
             if (! $executing) {
                 throw ValidationException::withMessages([
                     'order_id' => 'Выполнение заказа не начато.',
-                ]);
-            }
-
-            if ($executing->status !== OrderExecutingStatus::Process) {
-                throw ValidationException::withMessages([
-                    'order_id' => 'Заказ не находится в работе.',
                 ]);
             }
 
@@ -186,11 +186,12 @@ class OrderExecutingService
                     'process_at' => $now,
                 ]);
             } else {
+                // Все точки исполнены: ждём подтверждение автора по коду, заказ остаётся в работе.
                 $executing->update([
-                    'status' => OrderExecutingStatus::Complete,
-                    'complete_at' => $now,
+                    'status' => OrderExecutingStatus::Confirmation,
+                    'confirmation_at' => $now,
+                    'confirmation_number' => random_int(1000, 9999),
                 ]);
-                $executing->order?->update(['status' => OrderStatus::Complete]);
             }
 
             return $this->load($executing->refresh());
@@ -199,6 +200,7 @@ class OrderExecutingService
 
     /**
      * Снимок выполнения для автора заказа (страница наблюдения).
+     * Доступен и на этапе confirmation: все точки пройдены, ждём код от автора.
      *
      * @param  array<string, mixed>  $data
      */
@@ -224,13 +226,173 @@ class OrderExecutingService
             ]);
         }
 
-        if ($executing->status !== OrderExecutingStatus::Process) {
+        // Наблюдение работает и на этапе подтверждения кодом; закрытые выполнения не показываем.
+        if (! in_array($executing->status, [OrderExecutingStatus::Process, OrderExecutingStatus::Confirmation], true)) {
             throw ValidationException::withMessages([
                 'order_id' => 'Заказ не находится в процессе.',
             ]);
         }
 
         return $this->load($executing);
+    }
+
+    /**
+     * Отменяет заказ по решению автора: снимает исполнителя и закрывает выполнение.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{order: Order, executing: OrderExecuting|null}
+     */
+    public function cancel(User $author, array $data): array
+    {
+        $payload = $this->validateIds($data);
+        $order = Order::query()->findOrFail($payload['order_id']);
+
+        if ($order->user_id !== $author->id) {
+            throw ValidationException::withMessages([
+                'order_id' => 'Отменить можно только собственный заказ.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($order) {
+            $executing = OrderExecuting::query()
+                ->where('order_id', $order->id)
+                ->where('status', OrderExecutingStatus::Process)
+                ->lockForUpdate()
+                ->first();
+
+            $locked = Order::query()->whereKey($order->id)->lockForUpdate()->first();
+
+            if (! $locked) {
+                throw ValidationException::withMessages([
+                    'order_id' => 'Заказ не найден.',
+                ]);
+            }
+
+            if ($locked->status === OrderStatus::Complete) {
+                throw ValidationException::withMessages([
+                    'order_id' => 'Заказ уже исполнен.',
+                ]);
+            }
+
+            if ($locked->status === OrderStatus::Cancel) {
+                throw ValidationException::withMessages([
+                    'order_id' => 'Заказ уже отменён.',
+                ]);
+            }
+
+            if ($executing) {
+                $executing->update([
+                    'status' => OrderExecutingStatus::Cancel,
+                    'complete_at' => now(),
+                ]);
+            }
+
+            $locked->update([
+                'status' => OrderStatus::Cancel,
+                'reason' => 'Заказ отменён заказчиком.',
+                'canceled_at' => now(),
+            ]);
+
+            return [
+                'order' => $locked->load(['points', 'user', 'currentExecuting', 'orderType']),
+                'executing' => $executing ? $this->load($executing) : null,
+            ];
+        });
+    }
+
+    /**
+     * Отказ исполнителя от выполнения: снимает назначение и возвращает заказ в ожидание.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{order: Order, executing: OrderExecuting}
+     */
+    public function decline(User $executor, array $data): array
+    {
+        $this->assertExecutor($executor);
+        $payload = $this->validateIds($data);
+
+        return DB::transaction(function () use ($executor, $payload) {
+            $executing = OrderExecuting::query()
+                ->where('order_id', $payload['order_id'])
+                ->where('executor_id', $executor->id)
+                ->where('status', OrderExecutingStatus::Process)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $executing) {
+                throw ValidationException::withMessages([
+                    'order_id' => 'Выполнение заказа не начато.',
+                ]);
+            }
+
+            $order = Order::query()->whereKey($executing->order_id)->lockForUpdate()->first();
+
+            if (! $order) {
+                throw ValidationException::withMessages([
+                    'order_id' => 'Заказ не найден.',
+                ]);
+            }
+
+            if ($order->status !== OrderStatus::Process) {
+                throw ValidationException::withMessages([
+                    'order_id' => 'Заказ не находится в работе.',
+                ]);
+            }
+
+            $executing->update([
+                'status' => OrderExecutingStatus::Cancel,
+                'canceled_at' => now(),
+            ]);
+
+            // Заказ снова в ожидании: поиск исполнителей начинается заново.
+            $order->update(['status' => OrderStatus::Wait]);
+
+            return [
+                'order' => $order->load(['points', 'user', 'currentExecuting', 'orderType']),
+                'executing' => $this->load($executing),
+            ];
+        });
+    }
+
+    /**
+     * Подтверждает завершение заказа автором: сверяет код и завершает выполнение.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function confirm(User $executor, array $data): OrderExecuting
+    {
+        $this->assertExecutor($executor);
+        $payload = $this->validateConfirm($data);
+
+        return DB::transaction(function () use ($executor, $payload) {
+            $executing = OrderExecuting::query()
+                ->where('order_id', $payload['order_id'])
+                ->where('executor_id', $executor->id)
+                ->where('status', OrderExecutingStatus::Confirmation)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $executing) {
+                throw ValidationException::withMessages([
+                    'order_id' => 'Заказ не ожидает подтверждения.',
+                ]);
+            }
+
+            // Код знает только автор: исполнитель получает его от него.
+            if ((string) $executing->confirmation_number !== (string) $payload['code']) {
+                throw ValidationException::withMessages([
+                    'code' => 'Неверный код подтверждения.',
+                ]);
+            }
+
+            $executing->update([
+                'status' => OrderExecutingStatus::Complete,
+                'complete_at' => now(),
+            ]);
+            $executing->order?->update(['status' => OrderStatus::Complete]);
+
+            return $this->load($executing->refresh());
+        });
     }
 
     /**
@@ -242,7 +404,7 @@ class OrderExecutingService
     {
         $asExecutor = OrderExecuting::query()
             ->where('executor_id', $user->id)
-            ->where('status', OrderExecutingStatus::Process)
+            ->whereIn('status', [OrderExecutingStatus::Process, OrderExecutingStatus::Confirmation])
             ->latest('process_at')
             ->first();
 
@@ -254,7 +416,7 @@ class OrderExecutingService
         }
 
         $asAuthor = OrderExecuting::query()
-            ->where('status', OrderExecutingStatus::Process)
+            ->whereIn('status', [OrderExecutingStatus::Process, OrderExecutingStatus::Confirmation])
             ->whereHas('order', fn ($query) => $query->where('user_id', $user->id))
             ->latest('process_at')
             ->first();
@@ -282,17 +444,12 @@ class OrderExecutingService
         $executing = OrderExecuting::query()
             ->where('order_id', $payload['order_id'])
             ->where('executor_id', $executor->id)
+            ->where('status', OrderExecutingStatus::Process)
             ->first();
 
         if (! $executing) {
             throw ValidationException::withMessages([
                 'order_id' => 'Выполнение заказа не начато.',
-            ]);
-        }
-
-        if ($executing->status !== OrderExecutingStatus::Process) {
-            throw ValidationException::withMessages([
-                'order_id' => 'Заказ не находится в работе.',
             ]);
         }
 
@@ -368,6 +525,32 @@ class OrderExecutingService
                 'order_point_id' => 'Точка не относится к этому заказу.',
             ]);
         }
+
+        return $validated;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array{order_id: int, code: numeric-string}
+     */
+    private function validateConfirm(array $data): array
+    {
+        $validator = Validator::make($data, [
+            'order_id' => ['required', 'integer', 'exists:orders,id'],
+            'code' => ['required', 'digits:4'],
+        ], [
+            'order_id.required' => 'Укажите заказ.',
+            'order_id.exists' => 'Заказ не найден.',
+            'code.required' => 'Введите код подтверждения.',
+            'code.digits' => 'Код состоит из 4 цифр.',
+        ]);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+
+        /** @var array{order_id: int, code: numeric-string} $validated */
+        $validated = $validator->validated();
 
         return $validated;
     }

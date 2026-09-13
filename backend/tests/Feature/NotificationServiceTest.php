@@ -54,6 +54,10 @@ class NotificationServiceTest extends TestCase
                 'order_point_id' => $point->order_point_id,
             ]);
         }
+        $started = $service->confirm($executor, [
+            'order_id' => $order->id,
+            'code' => (string) $started->confirmation_number,
+        ]);
 
         $this->assertSame(OrderExecutingStatus::Complete, $started->status);
 
@@ -63,6 +67,56 @@ class NotificationServiceTest extends TestCase
         $this->assertSame(1, $executor->notifications()->count());
         $this->assertSame('Заказ выполнен', $order->user->notifications()->first()?->data['title']);
         $this->assertSame('Заказ выполнен', $executor->notifications()->first()?->data['title']);
+    }
+
+    public function test_order_declined_notifies_author(): void
+    {
+        $this->mock(CentrifugoClient::class, function ($mock) {
+            $mock->shouldReceive('publish')->once();
+        });
+
+        [$executor, $order] = $this->executorAndOrder();
+        $service = app(OrderExecutingService::class);
+        $service->start($executor, ['order_id' => $order->id]);
+        ['executing' => $executing] = $service->decline($executor, ['order_id' => $order->id]);
+
+        app(NotificationService::class)->notifyOrderDeclined($order, $executing);
+
+        $notification = $order->user->notifications()->first();
+        $this->assertNotNull($notification);
+        $this->assertSame('order.declined', $notification->data['type']);
+        $this->assertSame('Исполнитель отказался', $notification->data['title']);
+        $this->assertSame($executor->id, $notification->data['executor_id']);
+        $this->assertStringContainsString($executor->name, $notification->data['body']);
+        $this->assertSame(0, $executor->notifications()->count());
+    }
+
+    public function test_order_confirmation_notifies_author_with_code(): void
+    {
+        $this->mock(CentrifugoClient::class, function ($mock) {
+            $mock->shouldReceive('publish')->once();
+        });
+
+        [$executor, $order] = $this->executorAndOrder();
+        $service = app(OrderExecutingService::class);
+        $started = $service->start($executor, ['order_id' => $order->id]);
+        foreach ($started->points as $point) {
+            $started = $service->completePoint($executor, [
+                'order_id' => $order->id,
+                'order_point_id' => $point->order_point_id,
+            ]);
+        }
+        $this->assertSame(OrderExecutingStatus::Confirmation, $started->status);
+
+        app(NotificationService::class)->notifyOrderConfirmation($started);
+
+        $notification = $order->user->notifications()->first();
+        $this->assertNotNull($notification);
+        $this->assertSame('order.confirmation', $notification->data['type']);
+        $this->assertSame('Заказ выполнен', $notification->data['title']);
+        $this->assertSame((string) $started->confirmation_number, $notification->data['confirmation_number']);
+        $this->assertStringContainsString((string) $started->confirmation_number, $notification->data['body']);
+        $this->assertSame(0, $executor->notifications()->count());
     }
 
     public function test_list_paginates_and_filters_unread(): void

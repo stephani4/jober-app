@@ -10,6 +10,7 @@ use App\Services\OrderRpcService;
 use App\Services\UserProfileRpcService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -35,11 +36,11 @@ class RpcController extends Controller
         }
 
         $method = (string) $request->input('method');
-        
+
         // Log incoming RPC method for debugging
-        \Illuminate\Support\Facades\Log::info('Incoming RPC method: ' . $method, [
+        Log::info('Incoming RPC method: '.$method, [
             'all_inputs' => $request->all(),
-            'user_id' => $userId
+            'user_id' => $userId,
         ]);
 
         /** @var array<string, mixed> $data */
@@ -59,6 +60,9 @@ class RpcController extends Controller
                 'order:available_executors_count' => $this->orders->availableExecutorsCount(),
                 'order:location' => $this->orders->location($user, $data),
                 'order:completePoint' => $this->orders->completePoint($user, $data),
+                'order:confirm' => $this->orders->confirm($user, $data),
+                'order:cancel' => $this->orders->cancel($user, $data),
+                'order:decline' => $this->orders->decline($user, $data),
                 'order:messages' => $this->messages->list($user, $data),
                 'order:message:send' => $this->messages->send($user, $data),
                 'notification:list' => $this->notifications->list($user, $data),

@@ -25,6 +25,8 @@ class OrderExecutingResource extends JsonResource
             'status' => $this->status->value,
             'process_at' => $this->process_at?->toISOString(),
             'complete_at' => $this->complete_at?->toISOString(),
+            'canceled_at' => $this->canceled_at?->toISOString(),
+            'confirmation_at' => $this->confirmation_at?->toISOString(),
             'lat' => $this->lat !== null ? (float) $this->lat : null,
             'lon' => $this->lon !== null ? (float) $this->lon : null,
             'location_at' => $this->location_at?->toISOString(),

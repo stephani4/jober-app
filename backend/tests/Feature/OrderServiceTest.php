@@ -143,9 +143,13 @@ class OrderServiceTest extends TestCase
         $executing = app(OrderExecutingService::class);
         $executing->start($executor, ['order_id' => $inProcess->id]);
         $startedDone = $executing->start($executor, ['order_id' => $done->id]);
-        $executing->completePoint($executor, [
+        $finished = $executing->completePoint($executor, [
             'order_id' => $done->id,
             'order_point_id' => $startedDone->points[0]->order_point_id,
+        ]);
+        $executing->confirm($executor, [
+            'order_id' => $done->id,
+            'code' => (string) $finished->confirmation_number,
         ]);
 
         $mine = app(OrderService::class)->listMine($customer);
@@ -166,9 +170,13 @@ class OrderServiceTest extends TestCase
         for ($index = 0; $index < 16; $index++) {
             $order = $this->orderFor($customer, "История {$index}");
             $started = $executing->start($executor, ['order_id' => $order->id]);
-            $executing->completePoint($executor, [
+            $finished = $executing->completePoint($executor, [
                 'order_id' => $order->id,
                 'order_point_id' => $started->points[0]->order_point_id,
+            ]);
+            $executing->confirm($executor, [
+                'order_id' => $order->id,
+                'code' => (string) $finished->confirmation_number,
             ]);
         }
 

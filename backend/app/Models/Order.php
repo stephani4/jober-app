@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'cost',
     'status',
     'reason',
+    'canceled_at',
 ])]
 class Order extends Model
 {
@@ -32,6 +33,7 @@ class Order extends Model
         return [
             'cost' => 'decimal:2',
             'status' => OrderStatus::class,
+            'canceled_at' => 'datetime',
         ];
     }
 

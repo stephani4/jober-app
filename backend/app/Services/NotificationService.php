@@ -4,9 +4,13 @@ namespace App\Services;
 
 use App\Http\Resources\NotificationResource;
 use App\Jobs\SendWebPushJob;
+use App\Models\Order;
 use App\Models\OrderExecuting;
 use App\Models\User;
+use App\Notifications\OrderCancelledNotification;
 use App\Notifications\OrderCompletedNotification;
+use App\Notifications\OrderConfirmationNotification;
+use App\Notifications\OrderDeclinedNotification;
 use App\Notifications\OrderTakenNotification;
 use App\Services\Centrifugo\CentrifugoClient;
 use App\Services\Centrifugo\CentrifugoTokenService;
@@ -43,6 +47,52 @@ class NotificationService
         }
 
         $this->send($order->user, new OrderTakenNotification($order, $executor));
+    }
+
+    /**
+     * Пишет уведомление исполнителю: заказчик отменил заказ во время выполнения.
+     */
+    public function notifyOrderCancelled(Order $order, OrderExecuting $executing): void
+    {
+        $executing->loadMissing('executor');
+
+        $executor = $executing->executor;
+        if (! $executor) {
+            return;
+        }
+
+        $this->send($executor, new OrderCancelledNotification($order, $executor));
+    }
+
+    /**
+     * Пишет уведомление заказчику: исполнитель отказался от выполнения.
+     */
+    public function notifyOrderDeclined(Order $order, OrderExecuting $executing): void
+    {
+        $executing->loadMissing('executor');
+
+        $executor = $executing->executor;
+        if (! $order->user || ! $executor || $order->user->id === $executor->id) {
+            return;
+        }
+
+        $this->send($order->user, new OrderDeclinedNotification($order, $executor));
+    }
+
+    /**
+     * Пишет уведомление заказчику: исполнитель завершил заказ, ожидается подтверждение по коду.
+     */
+    public function notifyOrderConfirmation(OrderExecuting $executing): void
+    {
+        $executing->loadMissing(['order.user', 'executor']);
+
+        $order = $executing->order;
+        $executor = $executing->executor;
+        if (! $order?->user || ! $executor || $order->user->id === $executor->id) {
+            return;
+        }
+
+        $this->send($order->user, new OrderConfirmationNotification($order, $executing));
     }
 
     /**
@@ -151,11 +201,16 @@ class NotificationService
     private function dispatchWebPush(User $user, DatabaseNotification $record): void
     {
         $data = is_array($record->data) ? $record->data : [];
+        $type = $data['type'] ?? null;
+        // Отказ и отмена возвращают к списку заказов; подтверждение ведёт к заказу с кодом.
+        $url = in_array($type, ['order.cancelled', 'order.declined', 'order.confirmation'], true)
+            ? '/orders'
+            : '/notifications';
 
         SendWebPushJob::dispatch($user->id, [
             'title' => (string) ($data['title'] ?? 'Jober'),
             'body' => (string) ($data['body'] ?? ''),
-            'url' => '/notifications',
+            'url' => $url,
             'tag' => 'notification-'.$record->id,
             'notification_id' => (string) $record->id,
             'order_id' => isset($data['order_id']) ? (int) $data['order_id'] : null,

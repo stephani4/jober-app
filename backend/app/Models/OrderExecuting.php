@@ -23,6 +23,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'lat',
     'lon',
     'location_at',
+    'canceled_at',
+    'confirmation_at',
+    'confirmation_number',
 ])]
 class OrderExecuting extends Model
 {
@@ -38,6 +41,7 @@ class OrderExecuting extends Model
             'lat' => 'float',
             'lon' => 'float',
             'location_at' => 'datetime',
+            'confirmation_at' => 'datetime',
         ];
     }
 

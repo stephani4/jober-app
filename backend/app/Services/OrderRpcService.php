@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\OrderExecutingStatus;
+use App\Enums\UserRole;
 use App\Http\Resources\OrderExecutingResource;
 use App\Http\Resources\OrderResource;
 use App\Jobs\ModerateOrderJob;
@@ -54,7 +55,7 @@ class OrderRpcService
     public function mine(User $user): array
     {
         return $this->orders->listMine($user)
-            ->map(fn ($order) => $this->toArray($order))
+            ->map(fn ($order) => $this->toArrayForAuthor($order))
             ->values()
             ->all();
     }
@@ -124,7 +125,7 @@ class OrderRpcService
      */
     public function watching(User $user, array $data): array
     {
-        return $this->executingToArray($this->executing->watching($user, $data));
+        return $this->executingToArrayForAuthor($this->executing->watching($user, $data));
     }
 
     /**
@@ -198,7 +199,7 @@ class OrderRpcService
                 $this->tokens->personalChannel($author),
                 [
                     'type' => 'order.executing',
-                    'executing' => $this->executingToArray($result),
+                    'executing' => $this->executingToArrayForAuthor($result),
                 ],
             );
         }
@@ -208,18 +209,118 @@ class OrderRpcService
             $this->publishOrderStatus($result->order);
         }
 
+        if ($result->status === OrderExecutingStatus::Confirmation) {
+            $this->notifications->notifyOrderConfirmation($result);
+            $this->publishOrderStatus($result->order);
+        }
+
         return $this->executingToArray($result);
     }
 
     /**
-     * Количество исполнителей онлайн без активного заказа.
+     * Подтверждает завершение заказа по коду от автора и уведомляет участников.
      *
-     * @return int
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public function confirm(User $executor, array $data): array
+    {
+        $executing = $this->executing->confirm($executor, $data);
+
+        $this->notifications->notifyOrderCompleted($executing);
+        $this->publishOrderStatus($executing->order);
+
+        return $this->executingToArray($executing);
+    }
+
+    /**
+     * Отменяет заказ по решению автора и уведомляет исполнителя, если он был назначен.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public function cancel(User $user, array $data): array
+    {
+        ['order' => $order, 'executing' => $executing] = $this->executing->cancel($user, $data);
+
+        if ($executing) {
+            $this->notifications->notifyOrderCancelled($order, $executing);
+
+            $executor = $executing->executor;
+            if ($executor) {
+                $this->centrifugo->publish(
+                    $this->tokens->personalChannel($executor),
+                    [
+                        'type' => 'order.cancelled',
+                        'order_id' => $order->id,
+                        'order' => $this->toArray($order),
+                    ],
+                );
+            }
+        }
+
+        $this->publishOrderStatus($order);
+
+        // Всем клиентам: отменённый заказ исчезает из лент поиска и списков заказов.
+        $this->centrifugo->broadcast(
+            [
+                (string) config('centrifugo.channels.search'),
+            ],
+            [
+                'type' => 'order.status',
+                'order' => $this->toArray($order),
+            ],
+        );
+
+        return $this->toArray($order);
+    }
+
+    /**
+     * Отказ исполнителя: уведомляет заказчика и возвращает заказ в ленту поиска.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public function decline(User $executor, array $data): array
+    {
+        ['order' => $order, 'executing' => $executing] = $this->executing->decline($executor, $data);
+
+        $this->notifications->notifyOrderDeclined($order, $executing);
+
+        $author = $order->user;
+        if ($author) {
+            // Заказчику: realtime-тост и закрытие экрана наблюдения.
+            $this->centrifugo->publish(
+                $this->tokens->personalChannel($author),
+                [
+                    'type' => 'order.declined',
+                    'order_id' => $order->id,
+                    'order' => $this->toArray($order),
+                ],
+            );
+        }
+
+        // Заказ снова в поиске: лента обновляется, свободные исполнители получают оффер.
+        $this->centrifugo->broadcast(
+            [
+                (string) config('centrifugo.channels.search'),
+            ],
+            [
+                'type' => 'order.created',
+                'order' => $this->toArray($order),
+            ],
+        );
+
+        return $this->executingToArray($executing);
+    }
+
+    /**
+     * Количество исполнителей онлайн без активного заказа.
      */
     public function availableExecutorsCount(): int
     {
         return User::query()
-            ->where('role', \App\Enums\UserRole::Executor)
+            ->where('role', UserRole::Executor)
             ->whereDoesntHave('orderExecutings', function ($query) {
                 $query->where('status', OrderExecutingStatus::Process);
             })
@@ -228,8 +329,6 @@ class OrderRpcService
 
     /**
      * Количество откликов исполнителя за сегодня.
-     *
-     * @return int
      */
     public function responsesCount(User $user): int
     {
@@ -258,9 +357,26 @@ class OrderRpcService
             $this->tokens->personalChannel($author),
             [
                 'type' => 'order.status',
-                'order' => $this->toArray($order),
+                'order' => $this->toArrayForAuthor($order),
             ],
         );
+    }
+
+    /**
+     * Данные заказа для автора; включает код подтверждения на этапе confirmation.
+     *
+     * @return array<string, mixed>
+     */
+    private function toArrayForAuthor(mixed $order): array
+    {
+        $data = $this->toArray($order);
+
+        $executing = $order->currentExecuting;
+        if ($executing?->status === OrderExecutingStatus::Confirmation) {
+            $data['confirmation_number'] = (string) $executing->confirmation_number;
+        }
+
+        return $data;
     }
 
     /**
@@ -269,6 +385,23 @@ class OrderRpcService
     private function toArray(mixed $order): array
     {
         return OrderResource::make($order)->resolve(new Request);
+    }
+
+    /**
+     * Данные выполнения для автора; на этапе confirmation добавляет код подтверждения.
+     *
+     * @return array<string, mixed>
+     */
+    private function executingToArrayForAuthor(OrderExecuting $executing): array
+    {
+        $payload = $this->executingToArray($executing);
+
+        // Код знает только автор: в ответах исполнителю он не отправляется.
+        if ($executing->status === OrderExecutingStatus::Confirmation) {
+            $payload['order']['confirmation_number'] = (string) $executing->confirmation_number;
+        }
+
+        return $payload;
     }
 
     /**

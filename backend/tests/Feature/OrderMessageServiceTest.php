@@ -93,11 +93,15 @@ class OrderMessageServiceTest extends TestCase
         $executing = app(OrderExecutingService::class);
         $started = $executing->start($executor, ['order_id' => $order->id]);
         foreach ($started->points as $point) {
-            $executing->completePoint($executor, [
+            $started = $executing->completePoint($executor, [
                 'order_id' => $order->id,
                 'order_point_id' => $point->order_point_id,
             ]);
         }
+        $executing->confirm($executor, [
+            'order_id' => $order->id,
+            'code' => (string) $started->confirmation_number,
+        ]);
 
         $this->assertSame(OrderStatus::Complete, $order->fresh()->status);
 
