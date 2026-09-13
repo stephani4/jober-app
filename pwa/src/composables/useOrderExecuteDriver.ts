@@ -107,6 +107,16 @@ export function useOrderExecuteDriver(orderId: Ref<number | null>) {
     }
   }
 
+  /**
+   * Подтверждение завершения кодом от автора; после успеха уводит со экрана.
+   */
+  async function confirmCompletion(code: string): Promise<void> {
+    const ok = await store.confirmCompletion(code)
+    if (ok && executing.value?.status === 'complete') {
+      await router.replace({ name: 'orders' })
+    }
+  }
+
   return {
     executing,
     loading,
@@ -124,5 +134,6 @@ export function useOrderExecuteDriver(orderId: Ref<number | null>) {
     simulateGeo,
     applySimulated,
     completeCurrent,
+    confirmCompletion,
   }
 }

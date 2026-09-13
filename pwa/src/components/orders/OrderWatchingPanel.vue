@@ -4,6 +4,10 @@ defineProps<{
   description: string
   address: string | null
   error: string
+  /** Заказ на этапе подтверждения: все точки пройдены, ждём код от автора. */
+  awaitingConfirmation?: boolean
+  /** Код подтверждения; показывается только автору на этапе confirmation. */
+  confirmationNumber?: string | null
 }>()
 </script>
 
@@ -18,7 +22,21 @@ defineProps<{
     <p v-if="address" class="mt-1 text-sm text-text-secondary">
       {{ address }}
     </p>
-    <p v-if="!error" class="mt-3 text-sm text-text-secondary">Исполнитель движется по маршруту.</p>
+    <!-- Этап подтверждения: автору показываем код, который нужно передать исполнителю. -->
+    <p
+      v-if="confirmationNumber"
+      class="mt-3 rounded-xl border border-accent-nav/30 bg-accent-nav/10 px-3 py-2 text-sm text-text-primary dark:border-accent-nav/40 dark:bg-accent-nav/20 dark:text-zinc-100"
+    >
+      Код подтверждения:
+      <span class="font-semibold tracking-[0.3em]">{{ confirmationNumber }}</span>
+      <span class="ml-1 text-xs text-text-secondary">— сообщите его исполнителю</span>
+    </p>
+    <p
+      v-if="!error && !awaitingConfirmation"
+      class="mt-3 text-sm text-text-secondary"
+    >
+      Исполнитель движется по маршруту.
+    </p>
     <p v-if="error" class="mt-3 text-sm text-accent-danger">
       {{ error }}
     </p>

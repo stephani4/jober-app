@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import OrderExecuteMap from '@/components/map/OrderExecuteMap.vue'
 import OrderChatDriver from '@/components/orders/OrderChatDriver.vue'
+import OrderConfirmPanel from '@/components/orders/OrderConfirmPanel.vue'
 import OrderExecutePanel from '@/components/orders/OrderExecutePanel.vue'
 import { useOrderExecuteDriver } from '@/composables/useOrderExecuteDriver'
 
@@ -30,6 +31,7 @@ const {
   simulateGeo,
   applySimulated,
   completeCurrent,
+  confirmCompletion,
 } = useOrderExecuteDriver(orderId)
 
 const stepLabel = computed(() => {
@@ -69,8 +71,14 @@ const pointAddress = computed(() => currentPoint.value?.order_point?.address ?? 
           @simulate="applySimulated"
         />
       </div>
+      <OrderConfirmPanel
+        v-if="executing?.status === 'confirmation'"
+        :submitting="submitting"
+        :error="error"
+        @confirm="confirmCompletion"
+      />
       <OrderExecutePanel
-        v-if="currentPoint"
+        v-else-if="currentPoint"
         :step-label="stepLabel"
         :description="pointDescription"
         :address="pointAddress"

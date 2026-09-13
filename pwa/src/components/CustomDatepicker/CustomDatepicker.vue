@@ -81,7 +81,7 @@ const dateValue = computed<Date | null>({
     icon-display="button"
     fluid
     :manual-input="true"
-    input-class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-teal-400/60"
+    input-class="w-full rounded-l-full rounded-r-none border border-border-input bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/25 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-accent-cyan"
     @hide="emit('blur')"
   />
 </template>

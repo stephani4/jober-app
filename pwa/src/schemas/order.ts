@@ -6,7 +6,7 @@ export const HELP_CARRY_TYPE_ID = 2
 export const ERRAND_TYPE_ID = 3
 
 export const orderStatusSchema = z.enum(['moderate', 'wait', 'process', 'complete', 'cancel'])
-export const orderExecutingStatusSchema = z.enum(['wait', 'process', 'complete'])
+export const orderExecutingStatusSchema = z.enum(['wait', 'process', 'complete', 'cancel', 'confirmation'])
 
 export const orderTypeSchema = z.object({
   id: z.number().int().positive(),
@@ -34,6 +34,8 @@ export const orderSchema = z.object({
   cost: z.number(),
   status: orderStatusSchema.default('wait'),
   reason: z.string().nullable().optional(),
+  // Код подтверждения приходит только автору заказа (personal-канал, mine).
+  confirmation_number: z.string().nullable().optional(),
   created_at: z.string().nullable().optional(),
   updated_at: z.string().nullable().optional(),
   user: userSchema.pick({ id: true, name: true, email: true, role: true }).optional(),
@@ -58,6 +60,18 @@ export const orderModeratedEventSchema = z.object({
 export const orderStatusEventSchema = z.object({
   type: z.literal('order.status'),
   order: orderSchema,
+})
+
+export const orderCancelledEventSchema = z.object({
+  type: z.literal('order.cancelled'),
+  order_id: z.number().int().positive(),
+  order: orderSchema.optional(),
+})
+
+export const orderDeclinedEventSchema = z.object({
+  type: z.literal('order.declined'),
+  order_id: z.number().int().positive(),
+  order: orderSchema.optional(),
 })
 
 export const createOrderPointPayloadSchema = z.object({
@@ -100,6 +114,8 @@ export const orderExecutingSchema = z.object({
   status: orderExecutingStatusSchema,
   process_at: z.string().nullable().optional(),
   complete_at: z.string().nullable().optional(),
+  canceled_at: z.string().nullable().optional(),
+  confirmation_at: z.string().nullable().optional(),
   lat: z.number().nullable().optional(),
   lon: z.number().nullable().optional(),
   location_at: z.string().nullable().optional(),
@@ -135,6 +151,8 @@ export type Order = z.infer<typeof orderSchema>
 export type OrderCreatedEvent = z.infer<typeof orderCreatedEventSchema>
 export type OrderTakenEvent = z.infer<typeof orderTakenEventSchema>
 export type OrderStatusEvent = z.infer<typeof orderStatusEventSchema>
+export type OrderCancelledEvent = z.infer<typeof orderCancelledEventSchema>
+export type OrderDeclinedEvent = z.infer<typeof orderDeclinedEventSchema>
 export type OrderExecutingEvent = z.infer<typeof orderExecutingEventSchema>
 export type ExecutorLocationEvent = z.infer<typeof executorLocationEventSchema>
 export type ActiveExecution = z.infer<typeof activeExecutionSchema>

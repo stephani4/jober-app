@@ -7,12 +7,17 @@ const props = defineProps<{
   startable?: boolean
   watchable?: boolean
   chatable?: boolean
+  cancellable?: boolean
+  cancelling?: boolean
+  /** Код подтверждения; передаётся только автору заказа. */
+  confirmationCode?: string | null
 }>()
 
 const emit = defineEmits<{
   start: []
   watch: []
   chat: []
+  cancel: []
 }>()
 
 const status = computed<OrderStatus>(() => props.order.status ?? 'wait')
@@ -80,6 +85,14 @@ const costLabel = computed(() =>
     >
       {{ order.reason }}
     </p>
+    <p
+      v-if="confirmationCode"
+      class="mt-3 rounded-xl border border-accent-nav/30 bg-accent-nav/10 px-3 py-2 text-sm text-text-primary dark:border-accent-nav/40 dark:bg-accent-nav/20 dark:text-zinc-100"
+    >
+      Код подтверждения:
+      <span class="font-semibold tracking-[0.3em]">{{ confirmationCode }}</span>
+      <span class="ml-1 text-xs text-text-secondary">— сообщите его исполнителю</span>
+    </p>
     <ol v-if="order.points.length" class="mt-3 space-y-1 text-sm text-text-secondary">
       <li v-for="point in order.points" :key="point.id">
         {{ point.position }}. {{ point.description }}
@@ -88,7 +101,7 @@ const costLabel = computed(() =>
     <button
       v-if="startable"
       type="button"
-      class="mt-4 w-full rounded-xl bg-accent-nav px-4 py-3 text-white"
+      class="mt-4 w-full rounded-full bg-accent-nav px-4 py-3 text-white transition hover:bg-accent-nav-hover"
       @click="emit('start')"
     >
       Приступить к выполнению
@@ -108,6 +121,15 @@ const costLabel = computed(() =>
       @click="emit('chat')"
     >
       Чат
+    </button>
+    <button
+      v-if="cancellable"
+      type="button"
+      class="mt-4 w-full rounded-xl border border-accent-danger px-4 py-3 text-sm text-accent-danger transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-red-950/30"
+      :disabled="cancelling"
+      @click="emit('cancel')"
+    >
+      {{ cancelling ? 'Отменяем…' : 'Отменить заказ' }}
     </button>
   </article>
 </template>

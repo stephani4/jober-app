@@ -2,7 +2,9 @@ import { notificationCreatedEventSchema, notificationListSchema, notificationUnr
 import {
   activeExecutionSchema,
   executorLocationEventSchema,
+  orderCancelledEventSchema,
   orderCreatedEventSchema,
+  orderDeclinedEventSchema,
   orderExecutingEventSchema,
   orderExecutingSchema,
   orderHistoryListSchema,
@@ -13,6 +15,8 @@ import {
   type ActiveExecution,
   type ExecutorLocationEvent,
   type Order,
+  type OrderCancelledEvent,
+  type OrderDeclinedEvent,
   type OrderExecuting,
   type OrderExecutingEvent,
   type OrderHistoryList,
@@ -59,6 +63,24 @@ export class RealtimeService {
   onOrderModerated(handler: (event: OrderModeratedEvent) => void): () => void {
     return centrifugoClient.onPublication((_channel, data) => {
       const parsed = orderModeratedEventSchema.safeParse(data)
+      if (parsed.success) {
+        handler(parsed.data)
+      }
+    })
+  }
+
+  onOrderCancelled(handler: (event: OrderCancelledEvent) => void): () => void {
+    return centrifugoClient.onPublication((_channel, data) => {
+      const parsed = orderCancelledEventSchema.safeParse(data)
+      if (parsed.success) {
+        handler(parsed.data)
+      }
+    })
+  }
+
+  onOrderDeclined(handler: (event: OrderDeclinedEvent) => void): () => void {
+    return centrifugoClient.onPublication((_channel, data) => {
+      const parsed = orderDeclinedEventSchema.safeParse(data)
       if (parsed.success) {
         handler(parsed.data)
       }
@@ -146,6 +168,28 @@ export class RealtimeService {
     const data = await centrifugoClient.rpc<unknown>('order:completePoint', {
       order_id: orderId,
       order_point_id: orderPointId,
+    })
+    return orderExecutingSchema.parse(data)
+  }
+
+  async confirmCompletion(orderId: number, code: string): Promise<OrderExecuting> {
+    const data = await centrifugoClient.rpc<unknown>('order:confirm', {
+      order_id: orderId,
+      code,
+    })
+    return orderExecutingSchema.parse(data)
+  }
+
+  async cancelOrder(orderId: number): Promise<Order> {
+    const data = await centrifugoClient.rpc<unknown>('order:cancel', {
+      order_id: orderId,
+    })
+    return orderSchema.parse(data)
+  }
+
+  async declineOrder(orderId: number): Promise<OrderExecuting> {
+    const data = await centrifugoClient.rpc<unknown>('order:decline', {
+      order_id: orderId,
     })
     return orderExecutingSchema.parse(data)
   }

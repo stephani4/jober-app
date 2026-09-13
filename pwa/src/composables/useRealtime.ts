@@ -97,8 +97,57 @@ export function useRealtime() {
               life: 4500,
             })
           })
+          const stopCancelled = realtimeService.onOrderCancelled((event) => {
+            if (event.order) {
+              // Отменённый заказ вычищается из любых списков (в т.ч. /orders получателя).
+              orders.upsert(event.order)
+            }
+
+            const route = router.currentRoute.value
+            const onExecuteScreen =
+              route.name === 'order-execute' &&
+              Number(route.params.orderId) === event.order_id
+
+            if (onExecuteScreen || execute.executing?.order_id === event.order_id) {
+              execute.reset()
+              if (onExecuteScreen) {
+                void router.replace({ name: 'orders' })
+              }
+            }
+
+            toast.add({
+              severity: 'error',
+              summary: 'Заказ отменён',
+              detail: 'Заказчик отменил заказ. Выполнение остановлено.',
+              life: 6000,
+            })
+          })
+          const stopDeclined = realtimeService.onOrderDeclined((event) => {
+            const route = router.currentRoute.value
+            const onWatchingScreen =
+              route.name === 'order-watching' &&
+              Number(route.params.orderId) === event.order_id
+
+            if (onWatchingScreen || execute.executing?.order_id === event.order_id) {
+              execute.reset()
+              if (onWatchingScreen) {
+                void router.replace({ name: 'orders' })
+              }
+            }
+
+            toast.add({
+              severity: 'warn',
+              summary: 'Исполнитель отказался',
+              detail: 'Заказ вернулся в поиск и снова доступен исполнителям.',
+              life: 6000,
+            })
+          })
           const stopNotifications = realtimeService.onNotificationCreated((event) => {
             notifications.ingestCreated(event)
+            if (event.notification.type === 'order.cancelled' || event.notification.type === 'order.declined') {
+              // Тост уже показывается в обработчиках order.cancelled / order.declined
+              return
+            }
             toast.add({
               severity: 'success',
               summary: event.notification.title,
@@ -111,6 +160,8 @@ export function useRealtime() {
             stopTaken()
             stopStatus()
             stopModerated()
+            stopCancelled()
+            stopDeclined()
             stopNotifications()
           }
           try {

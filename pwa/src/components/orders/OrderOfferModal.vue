@@ -61,7 +61,7 @@ const costLabel = computed(() => {
             </button>
             <button
               type="button"
-              class="flex-1 rounded-xl bg-accent-nav px-4 py-3 text-white"
+              class="flex-1 rounded-full bg-accent-nav px-4 py-3 text-white transition hover:bg-accent-nav-hover"
               @click="accept()"
             >
               Приступить к выполнению

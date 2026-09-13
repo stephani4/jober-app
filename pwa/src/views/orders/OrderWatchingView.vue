@@ -20,12 +20,17 @@ const {
   remainingRoute,
   currentPoint,
   destination,
+  awaitingConfirmation,
+  confirmationNumber,
   loading,
   error,
   routeError,
 } = useOrderWatchingDriver(orderId)
 
 const stepLabel = computed(() => {
+  if (awaitingConfirmation.value) {
+    return 'Подтверждение выполнения'
+  }
   const points = executing.value?.points ?? []
   const index = currentPoint.value
     ? points.findIndex((point) => point.id === currentPoint.value?.id)
@@ -36,9 +41,12 @@ const stepLabel = computed(() => {
   return `Точка ${index + 1} из ${points.length}`
 })
 
-const pointDescription = computed(
-  () => currentPoint.value?.order_point?.description || 'Исполнитель в пути',
-)
+const pointDescription = computed(() => {
+  if (awaitingConfirmation.value) {
+    return 'Все точки маршрута пройдены. Ожидается подтверждение кода.'
+  }
+  return currentPoint.value?.order_point?.description || 'Исполнитель в пути'
+})
 
 const pointAddress = computed(() => currentPoint.value?.order_point?.address ?? null)
 </script>
@@ -60,10 +68,12 @@ const pointAddress = computed(() => currentPoint.value?.order_point?.address ?? 
         <OrderExecuteMap :destination="destination" :position="position" :route="remainingRoute" />
       </div>
       <OrderWatchingPanel
-        v-if="currentPoint || error"
+        v-if="currentPoint || awaitingConfirmation || error"
         :step-label="stepLabel"
         :description="pointDescription"
         :address="pointAddress"
+        :awaiting-confirmation="awaitingConfirmation"
+        :confirmation-number="confirmationNumber"
         :error="error || routeError"
       />
     </template>

@@ -112,7 +112,7 @@ async function onSubmit(): Promise<void> {
       <button
         v-if="step < 3"
         type="button"
-        class="flex-1 rounded-xl bg-accent-nav px-4 py-3 text-white disabled:opacity-50"
+        class="flex-1 rounded-full bg-accent-nav px-4 py-3 text-white transition hover:bg-accent-nav-hover disabled:opacity-50"
         @click="next()"
       >
         Далее
@@ -120,7 +120,7 @@ async function onSubmit(): Promise<void> {
       <button
         v-else
         type="button"
-        class="flex-1 rounded-xl bg-accent-nav px-4 py-3 text-white disabled:opacity-50"
+        class="flex-1 rounded-full bg-accent-nav px-4 py-3 text-white transition hover:bg-accent-nav-hover disabled:opacity-50"
         :disabled="submitting"
         @click="onSubmit"
       >

@@ -29,7 +29,14 @@ export function restoreActiveOrder(router: Router, userId: number | null): Promi
         return false
       }
 
-      const name = active.view === 'execute' ? 'order-execute' : 'order-watching'
+      // На экран наблюдения автора не перебрасываем автоматически —
+      // восстановление только для исполнителя, выполняющего заказ.
+      if (active.view !== 'execute') {
+        lastRestored = false
+        return false
+      }
+
+      const name = 'order-execute'
       const current = router.currentRoute.value
       if (current.name !== name || Number(current.params.orderId) !== active.order_id) {
         await router.replace({ name, params: { orderId: String(active.order_id) } })

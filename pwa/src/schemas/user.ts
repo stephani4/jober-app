@@ -9,6 +9,7 @@ export const userSchema = z.object({
   role: userRoleSchema,
   birth_date: z.string().nullable().optional(),
   working_area_id: z.number().int().positive().nullable().optional(),
+  created_at: z.string().nullable().optional(),
 })
 
 export type UserRole = z.infer<typeof userRoleSchema>

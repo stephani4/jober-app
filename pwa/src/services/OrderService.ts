@@ -45,6 +45,18 @@ export class OrderService {
     return realtimeService.completePoint(orderId, orderPointId)
   }
 
+  confirmCompletion(orderId: number, code: string): Promise<OrderExecuting> {
+    return realtimeService.confirmCompletion(orderId, code)
+  }
+
+  cancel(orderId: number): Promise<Order> {
+    return realtimeService.cancelOrder(orderId)
+  }
+
+  decline(orderId: number): Promise<OrderExecuting> {
+    return realtimeService.declineOrder(orderId)
+  }
+
   getResponsesCount(): Promise<number> {
     return realtimeService.responsesCount()
   }

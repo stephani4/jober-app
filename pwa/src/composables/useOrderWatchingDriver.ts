@@ -19,6 +19,14 @@ export function useOrderWatchingDriver(orderId: Ref<number | null>) {
     return points.find((point) => point.status === 'process') ?? null
   })
 
+  /** Этап подтверждения кодом: все точки пройдены, заказ ждёт проверки автором. */
+  const awaitingConfirmation = computed(() => executing.value?.status === 'confirmation')
+
+  /** Код подтверждения виден только автору и только на этапе confirmation. */
+  const confirmationNumber = computed(() =>
+    awaitingConfirmation.value ? executing.value?.order?.confirmation_number ?? null : null,
+  )
+
   const destination = computed(() => {
     const point = currentPoint.value?.order_point
     if (point?.lat == null || point.lon == null) {
@@ -85,9 +93,19 @@ export function useOrderWatchingDriver(orderId: Ref<number | null>) {
     }
   })
 
+  const stopStatus = realtimeService.onOrderStatus((event) => {
+    if (event.order.id !== orderId.value) {
+      return
+    }
+    if (event.order.status === 'cancel') {
+      error.value = 'Заказ отменён заказчиком.'
+    }
+  })
+
   onBeforeUnmount(() => {
     stopLocation()
     stopExecuting()
+    stopStatus()
   })
 
   return {
@@ -96,6 +114,8 @@ export function useOrderWatchingDriver(orderId: Ref<number | null>) {
     remainingRoute,
     currentPoint,
     destination,
+    awaitingConfirmation,
+    confirmationNumber,
     loading,
     error,
     routeError,

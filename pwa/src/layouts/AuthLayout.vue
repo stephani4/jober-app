@@ -5,6 +5,7 @@ import Layout from '@/layouts/Layout.vue'
 import AppBottomNav from '@/components/AppBottomNav.vue'
 import AppHeroHeader from '@/components/AppHeroHeader.vue'
 import OrderOfferModal from '@/components/orders/OrderOfferModal.vue'
+import OrderDeclineConfirmModal from '@/components/orders/OrderDeclineConfirmModal.vue'
 import OrderTypePickerModal from '@/components/orders/OrderTypePickerModal.vue'
 import PwaPromptBanner from '@/components/PwaPromptBanner.vue'
 
@@ -32,5 +33,6 @@ const fullBleed = computed(() => Boolean(route.meta.fullBleed))
     </template>
   </Layout>
   <OrderOfferModal />
+  <OrderDeclineConfirmModal />
   <OrderTypePickerModal />
 </template>

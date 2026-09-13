@@ -19,6 +19,7 @@ export const useOrdersStore = defineStore('orders', () => {
   const responsesCount = ref(0)
   const availableExecutorsCount = ref(0)
   const loaded = ref(false)
+  const cancellingId = ref<number | null>(null)
 
   function upsert(order: Order): void {
     if (order.status === 'complete' || order.status === 'cancel') {
@@ -26,6 +27,16 @@ export const useOrdersStore = defineStore('orders', () => {
       return
     }
     items.value = upsertOrder(items.value, order)
+  }
+
+  async function cancel(orderId: number): Promise<void> {
+    cancellingId.value = orderId
+    try {
+      const order = await orderService.cancel(orderId)
+      upsert(order)
+    } finally {
+      cancellingId.value = null
+    }
   }
 
   async function fetchMine(): Promise<void> {
@@ -53,7 +64,9 @@ export const useOrdersStore = defineStore('orders', () => {
     responsesCount,
     availableExecutorsCount,
     loaded,
+    cancellingId,
     upsert,
+    cancel,
     fetchMine,
     fetchResponsesCount,
     fetchAvailableExecutorsCount,

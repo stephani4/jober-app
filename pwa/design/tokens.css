@@ -15,9 +15,23 @@
   --color-text-primary: #18181b;
   --color-text-secondary: #71717a;
 
-  /* Accent / active */
-  --color-accent-nav: #141414;
+  /* Accent / active — оранжевый базовый акцент (design/reference/home-baseline.md) */
+  --color-accent-nav: #f97316;
+  --color-accent-nav-hover: #ea580c;
   --color-accent-danger: #ef4444;
+
+  /* App baseline — токены оранжевого акцента (алиасы для новых экранов) */
+  --color-accent-orange: #f97316;
+  --color-accent-orange-hover: #ea580c;
+  --shadow-nav-active-orange: 0 10px 24px rgb(249 115 22 / 0.35);
+
+  /* Auth baseline (design/reference/auth-baseline.md) — оранжевый акцент */
+  --color-accent-primary: #f97316;
+  --color-accent-primary-hover: #ea580c;
+  --color-hero-grad-from: #f97316;
+  --color-hero-grad-to: #ea780c;
+  --color-hero-heading: #294c57;
+  --color-border-input: #e4e4e7;
 
   /* Borders */
   --color-border-subtle: rgb(24 24 27 / 0.08);
@@ -31,7 +45,7 @@
 
   /* Shadows */
   --shadow-card: 0 1px 2px rgb(24 24 27 / 0.06);
-  --shadow-nav-active: 0 10px 24px rgb(20 20 20 / 0.28);
+  --shadow-nav-active: 0 10px 24px rgb(249 115 22 / 0.35);
 
   /* Spacing rhythm */
   --spacing-page-x: 1rem;

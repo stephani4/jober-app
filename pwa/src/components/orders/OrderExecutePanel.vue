@@ -36,7 +36,7 @@ const emit = defineEmits<{
     </p>
     <button
       type="button"
-      class="mt-4 w-full rounded-xl bg-accent-nav px-4 py-3 text-white disabled:opacity-50"
+      class="mt-4 w-full rounded-full bg-accent-nav px-4 py-3 text-white transition hover:bg-accent-nav-hover disabled:opacity-50"
       :disabled="submitting"
       @click="emit('complete')"
     >

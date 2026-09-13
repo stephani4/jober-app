@@ -82,7 +82,7 @@ const router = createRouter({
           path: 'profile',
           name: 'profile',
           component: () => import('@/views/profile/ProfileView.vue'),
-          meta: { title: 'Профиль', nav: 'profile', hero: 'profile' },
+          meta: { title: 'Профиль', nav: 'profile', showBack: true, hideNav: true },
         },
         {
           path: 'profile/edit',

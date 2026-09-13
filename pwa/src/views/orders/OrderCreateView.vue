@@ -28,7 +28,7 @@ function onCreated(): void {
     <p class="text-sm text-text-secondary">Сначала выберите вид заказа</p>
     <button
       type="button"
-      class="rounded-xl bg-accent-nav px-4 py-3 text-white"
+      class="rounded-full bg-accent-nav px-4 py-3 text-white transition hover:bg-accent-nav-hover"
       @click="openPicker()"
     >
       Выбрать вид

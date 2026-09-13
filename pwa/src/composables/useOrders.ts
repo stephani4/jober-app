@@ -6,7 +6,7 @@ import { useRealtimeStore } from '@/stores/realtime'
 export function useOrders() {
   const store = useOrdersStore()
   const realtime = useRealtimeStore()
-  const { items, responsesCount, availableExecutorsCount, loaded } = storeToRefs(store)
+  const { items, responsesCount, availableExecutorsCount, loaded, cancellingId } = storeToRefs(store)
   const { status } = storeToRefs(realtime)
 
   watch(
@@ -26,9 +26,11 @@ export function useOrders() {
     responsesCount,
     availableExecutorsCount,
     loaded,
+    cancellingId,
     fetchMine: () => store.fetchMine(),
     fetchResponsesCount: () => store.fetchResponsesCount(),
     fetchAvailableExecutorsCount: () => store.fetchAvailableExecutorsCount(),
     upsert: store.upsert,
+    cancel: store.cancel,
   }
 }

@@ -1,9 +1,6 @@
----
-description: Jober project overview and domain
-alwaysApply: true
----
-
 # Jober
+
+> Область: применяется всегда. Общее описание проекта и домена.
 
 Тема: доска заданий / объявлений для исполнителей.
 
@@ -17,4 +14,4 @@ alwaysApply: true
 
 - Default color palette is **light**.
 - Support switching to a **dark** theme (class-based `dark` mode on `<html>`).
-- Baseline mobile design: `pwa/design/reference/profile-baseline.png` (см. правило `pwa-design`).
+- Baseline mobile design: `pwa/design/reference/profile-baseline.png` (см. `03-pwa-design.md`).

@@ -32,16 +32,6 @@ async function onSuccess(path: string): Promise<void> {
 
 <template>
   <div class="w-full max-w-md">
-    <div class="mb-8 text-center">
-      <p class="text-sm uppercase tracking-[0.25em] text-teal-700 dark:text-teal-300/80">Jober</p>
-      <h1 class="mt-3 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-        Вход
-      </h1>
-      <p class="mt-2 text-slate-500 dark:text-slate-400">
-        Войдите, чтобы смотреть и брать заказы
-      </p>
-    </div>
-
     <LoginForm :info="info" :redirect-to="redirectTo" @success="onSuccess" />
   </div>
 </template>

@@ -1,0 +1,1 @@
+focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/25 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-accent-primary

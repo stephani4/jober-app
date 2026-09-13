@@ -18,52 +18,56 @@ function isActive(key: string): boolean {
 function isCreate(key: string): boolean {
   return key === 'create'
 }
-
-const itemClass =
-  'relative flex shrink-0 flex-col items-center no-underline'
 </script>
 
 <template>
   <nav
-    class="fixed inset-x-0 bottom-0 z-50 border-t border-border-subtle bg-surface-page pb-[env(safe-area-inset-bottom)] dark:border-white/10 dark:bg-zinc-900"
+    class="fixed bottom-0 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 overflow-hidden rounded-t-2xl border border-border-subtle bg-surface-page shadow-[var(--shadow-card)] pb-[env(safe-area-inset-bottom)] dark:border-white/10 dark:bg-zinc-900"
     aria-label="Основная навигация"
   >
-    <div class="mx-auto flex h-[4.5rem] max-w-lg items-end justify-between px-4">
+    <div class="grid h-16 grid-cols-5 items-center justify-items-stretch">
       <template v-for="item in bottomNavItems" :key="item.key">
         <button
           v-if="isCreate(item.key)"
           type="button"
-          :class="itemClass"
+          class="relative flex flex-col items-center gap-1 py-1"
           :aria-label="item.label"
           @click="openPicker()"
         >
           <span
-            class="inline-flex items-center justify-center overflow-hidden rounded-full bg-accent-nav px-4 py-3 text-white shadow-[var(--shadow-nav-active)] -translate-y-3 gap-1 transition duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none"
+            class="flex h-11 w-11 items-center justify-center rounded-full bg-accent-nav text-white shadow-[var(--shadow-nav-active)]"
           >
             <BottomNavIcon :name="item.key" class="h-5 w-5 shrink-0" />
-            <span class="text-xs leading-none">Заказ+</span>
           </span>
+          <span class="text-[10px] font-semibold leading-none text-text-primary">Заказ+</span>
         </button>
+
         <RouterLink
           v-else
           :to="item.to"
-          :class="itemClass"
+          class="relative flex flex-col items-center gap-1 py-1"
           :aria-label="item.label"
           :aria-current="isActive(item.key) ? 'page' : undefined"
         >
           <span
-            class="inline-flex items-center justify-center overflow-hidden rounded-full transition duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none"
+            class="flex h-11 items-center justify-center rounded-full"
             :class="
               isActive(item.key)
-                ? '-translate-y-2 bg-accent-nav p-3 text-white shadow-[var(--shadow-nav-active)]'
-                : 'mb-1.5 bg-surface-muted p-3 text-text-secondary dark:bg-zinc-800 dark:text-zinc-400'
+                ? 'w-11 bg-accent-nav text-white shadow-[var(--shadow-nav-active)]'
+                : 'w-8 text-text-secondary dark:text-zinc-400'
             "
           >
-            <BottomNavIcon :name="item.key" class="h-5 w-5 shrink-0" />
+            <BottomNavIcon :name="item.key" class="h-6 w-6 shrink-0" />
+          </span>
+          <span
+            class="text-[10px] leading-none"
+            :class="isActive(item.key) ? 'font-semibold text-text-primary' : 'text-text-secondary dark:text-zinc-400'"
+          >
+            {{ item.label }}
           </span>
           <NotificationBadge
             v-if="item.key === 'profile'"
-            class="absolute right-1 top-0 z-10"
+            class="absolute right-1 top-0.5 z-10"
             :count="unreadCount"
           />
         </RouterLink>
