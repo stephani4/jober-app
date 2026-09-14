@@ -1,14 +1,26 @@
+import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useOrdersStore } from '@/stores/orders'
-import { adminOrderService } from '@/services/AdminOrderService'
-import type { OrderStatus } from '@/schemas/order'
+import { adminOrderService, type OrderListFilters } from '@/services/AdminOrderService'
+import { adminOrderTypeService } from '@/services/AdminOrderTypeService'
+import type { OrderType } from '@/schemas/order'
 
 /**
- * Список заказов и действия модерации.
+ * Список заказов: фильтры, пагинация и действия модерации.
  */
 export function useAdminOrders() {
   const store = useOrdersStore()
-  const { items, loading, loadingMore, nextCursor, status } = storeToRefs(store)
+  const { items, loading, loadingMore, nextCursor, filters } = storeToRefs(store)
+
+  /** Справочник видов заказа для выпадающего списка фильтра. */
+  const types = ref<OrderType[]>([])
+
+  async function loadTypes(): Promise<void> {
+    if (types.value.length > 0) {
+      return
+    }
+    types.value = (await adminOrderTypeService.list()).types
+  }
 
   async function approve(orderId: number): Promise<void> {
     const order = await adminOrderService.approve(orderId)
@@ -25,8 +37,10 @@ export function useAdminOrders() {
     loading,
     loadingMore,
     nextCursor,
-    status,
-    fetchFirst: (next?: OrderStatus | 'all') => store.fetchFirst(next),
+    filters,
+    types,
+    loadTypes,
+    fetchFirst: (next?: OrderListFilters) => store.fetchFirst(next),
     loadMore: () => store.loadMore(),
     approve,
     cancel,

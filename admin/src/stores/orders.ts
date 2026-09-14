@@ -1,20 +1,23 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { adminOrderService } from '@/services/AdminOrderService'
-import type { Order, OrderStatus } from '@/schemas/order'
+import { adminOrderService, type OrderListFilters } from '@/services/AdminOrderService'
+import type { Order } from '@/schemas/order'
 
 export const useOrdersStore = defineStore('orders', () => {
   const items = ref<Order[]>([])
   const nextCursor = ref<number | null>(null)
   const loading = ref(false)
   const loadingMore = ref(false)
-  const status = ref<OrderStatus | 'all'>('moderate')
+  const filters = ref<OrderListFilters>({ status: 'moderate' })
 
-  async function fetchFirst(nextStatus: OrderStatus | 'all' = status.value): Promise<void> {
-    status.value = nextStatus
+  /** Загружает первую страницу с новыми (или текущими) фильтрами. */
+  async function fetchFirst(next?: OrderListFilters): Promise<void> {
+    if (next !== undefined) {
+      filters.value = next
+    }
     loading.value = true
     try {
-      const page = await adminOrderService.list(nextStatus)
+      const page = await adminOrderService.list(filters.value)
       items.value = page.items
       nextCursor.value = page.next_cursor
     } finally {
@@ -22,13 +25,14 @@ export const useOrdersStore = defineStore('orders', () => {
     }
   }
 
+  /** Догружает следующую страницу (по 15 записей). */
   async function loadMore(): Promise<void> {
     if (nextCursor.value == null || loadingMore.value || loading.value) {
       return
     }
     loadingMore.value = true
     try {
-      const page = await adminOrderService.list(status.value, nextCursor.value)
+      const page = await adminOrderService.list(filters.value, nextCursor.value)
       const known = new Set(items.value.map((item) => item.id))
       items.value = [...items.value, ...page.items.filter((item) => !known.has(item.id))]
       nextCursor.value = page.next_cursor
@@ -46,7 +50,7 @@ export const useOrdersStore = defineStore('orders', () => {
     nextCursor,
     loading,
     loadingMore,
-    status,
+    filters,
     fetchFirst,
     loadMore,
     replace,

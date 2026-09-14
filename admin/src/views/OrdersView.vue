@@ -1,32 +1,80 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { isAxiosError } from 'axios'
 import CancelReasonDialog from '@/components/CancelReasonDialog.vue'
 import { useAdminOrders, useAuth } from '@/composables'
 import { orderStatusLabel, type Order, type OrderStatus } from '@/schemas/order'
 
 const { can } = useAuth()
-const { items, loading, loadingMore, nextCursor, status, fetchFirst, loadMore, approve, cancel } =
-  useAdminOrders()
+const {
+  items,
+  loading,
+  loadingMore,
+  nextCursor,
+  types,
+  loadTypes,
+  fetchFirst,
+  loadMore,
+  approve,
+  cancel,
+} = useAdminOrders()
 
-const filters: { id: OrderStatus | 'all'; label: string }[] = [
-  { id: 'moderate', label: 'На модерации' },
-  { id: 'wait', label: 'Ожидают' },
-  { id: 'cancel', label: 'Отклонённые' },
-  { id: 'all', label: 'Все' },
-]
+const DEFAULT_STATUS: OrderStatus | 'all' = 'moderate'
+
+const form = reactive({
+  id: '',
+  order_type_id: '',
+  cost_min: '',
+  cost_max: '',
+  status: DEFAULT_STATUS,
+})
 
 const error = ref('')
 const busyId = ref<number | null>(null)
 const cancelTarget = ref<Order | null>(null)
 
 onMounted(() => {
-  void fetchFirst('moderate')
+  void loadTypes()
+  void fetchFirst({ status: DEFAULT_STATUS })
 })
 
-async function onFilter(id: OrderStatus | 'all'): Promise<void> {
+async function onApply(): Promise<void> {
   error.value = ''
-  await fetchFirst(id)
+  try {
+    await fetchFirst({
+      id: form.id.trim() || undefined,
+      order_type_id: form.order_type_id || undefined,
+      cost_min: form.cost_min || undefined,
+      cost_max: form.cost_max || undefined,
+      status: form.status,
+    })
+  } catch (err) {
+    error.value = extractError(err, 'Не удалось загрузить заказы.')
+  }
+}
+
+function onReset(): void {
+  form.id = ''
+  form.order_type_id = ''
+  form.cost_min = ''
+  form.cost_max = ''
+  form.status = DEFAULT_STATUS
+  void onApply()
+}
+
+function extractError(err: unknown, fallback: string): string {
+  if (isAxiosError(err)) {
+    return (
+      err.response?.data?.message
+      || err.response?.data?.errors?.id?.[0]
+      || err.response?.data?.errors?.order_type_id?.[0]
+      || err.response?.data?.errors?.cost_min?.[0]
+      || err.response?.data?.errors?.cost_max?.[0]
+      || err.response?.data?.errors?.status?.[0]
+      || fallback
+    )
+  }
+  return fallback
 }
 
 async function onApprove(order: Order): Promise<void> {
@@ -78,22 +126,86 @@ function costLabel(value: number): string {
       <p class="mt-1 text-sm text-text-secondary">Ручная модерация. Автоочередь работает параллельно.</p>
     </div>
 
-    <div class="flex flex-wrap gap-2">
+    <form
+      class="flex flex-wrap items-end gap-3"
+      @submit.prevent="onApply"
+    >
+      <label class="flex flex-col gap-1 text-sm">
+        <span class="text-text-secondary">Номер заказа</span>
+        <input
+          v-model="form.id"
+          type="number"
+          min="1"
+          placeholder="№"
+          class="w-36 rounded-lg border border-border-subtle bg-white px-3 py-2 dark:border-white/10 dark:bg-zinc-900"
+        >
+      </label>
+      <label class="flex flex-col gap-1 text-sm">
+        <span class="text-text-secondary">Вид заказа</span>
+        <select
+          v-model="form.order_type_id"
+          class="rounded-lg border border-border-subtle bg-white px-3 py-2 dark:border-white/10 dark:bg-zinc-900"
+        >
+          <option value="">Все виды</option>
+          <option
+            v-for="type in types"
+            :key="type.id"
+            :value="String(type.id)"
+          >
+            {{ type.name }}
+          </option>
+        </select>
+      </label>
+      <label class="flex flex-col gap-1 text-sm">
+        <span class="text-text-secondary">Стоимость от</span>
+        <input
+          v-model="form.cost_min"
+          type="number"
+          min="0"
+          placeholder="0"
+          class="w-32 rounded-lg border border-border-subtle bg-white px-3 py-2 dark:border-white/10 dark:bg-zinc-900"
+        >
+      </label>
+      <label class="flex flex-col gap-1 text-sm">
+        <span class="text-text-secondary">Стоимость до</span>
+        <input
+          v-model="form.cost_max"
+          type="number"
+          min="0"
+          placeholder="∞"
+          class="w-32 rounded-lg border border-border-subtle bg-white px-3 py-2 dark:border-white/10 dark:bg-zinc-900"
+        >
+      </label>
+      <label class="flex flex-col gap-1 text-sm">
+        <span class="text-text-secondary">Статус</span>
+        <select
+          v-model="form.status"
+          class="rounded-lg border border-border-subtle bg-white px-3 py-2 dark:border-white/10 dark:bg-zinc-900"
+        >
+          <option value="all">Все</option>
+          <option value="moderate">На модерации</option>
+          <option value="wait">Ожидают</option>
+          <option value="process">Выполняется</option>
+          <option value="complete">Исполнено</option>
+          <option value="cancel">Отклонённые</option>
+        </select>
+      </label>
       <button
-        v-for="filter in filters"
-        :key="filter.id"
-        type="button"
-        class="rounded-full px-4 py-2 text-sm"
-        :class="
-          status === filter.id
-            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-            : 'border border-border-subtle bg-white dark:border-white/10 dark:bg-zinc-900'
-        "
-        @click="onFilter(filter.id)"
+        type="submit"
+        class="rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+        :disabled="loading"
       >
-        {{ filter.label }}
+        Применить
       </button>
-    </div>
+      <button
+        type="button"
+        class="rounded-lg border border-border-subtle px-4 py-2 text-sm dark:border-white/10"
+        :disabled="loading"
+        @click="onReset"
+      >
+        Сбросить
+      </button>
+    </form>
 
     <p v-if="error" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
       {{ error }}

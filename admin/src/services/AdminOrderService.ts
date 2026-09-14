@@ -2,19 +2,34 @@ import { http } from '@/services/HttpClient'
 import {
   orderActionSchema,
   orderListSchema,
+  orderTypeListSchema,
   type Order,
   type OrderList,
   type OrderStatus,
+  type OrderTypeList,
 } from '@/schemas/order'
+
+/** Значения фильтров списка заказов (числа приходят строками из полей формы). */
+export interface OrderListFilters {
+  status: OrderStatus | 'all'
+  id?: string
+  order_type_id?: string
+  cost_min?: string
+  cost_max?: string
+}
 
 /**
  * Заказы в контуре /api/admin.
  */
 export class AdminOrderService {
-  async list(status: OrderStatus | 'all', cursor?: number | null): Promise<OrderList> {
+  async list(filters: OrderListFilters, cursor?: number | null): Promise<OrderList> {
     const { data } = await http.client.get('/admin/orders', {
       params: {
-        status,
+        status: filters.status,
+        id: filters.id || undefined,
+        order_type_id: filters.order_type_id || undefined,
+        cost_min: filters.cost_min || undefined,
+        cost_max: filters.cost_max || undefined,
         cursor: cursor ?? undefined,
       },
     })

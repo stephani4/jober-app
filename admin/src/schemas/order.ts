@@ -44,6 +44,10 @@ export const orderListSchema = z.object({
   next_cursor: z.number().int().positive().nullable(),
 })
 
+export const orderTypeListSchema = z.object({
+  types: z.array(orderTypeSchema),
+})
+
 export const orderActionSchema = z.object({
   order: orderSchema,
 })
@@ -51,6 +55,7 @@ export const orderActionSchema = z.object({
 export type OrderStatus = z.infer<typeof orderStatusSchema>
 export type Order = z.infer<typeof orderSchema>
 export type OrderList = z.infer<typeof orderListSchema>
+export type OrderTypeList = z.infer<typeof orderTypeListSchema>
 
 export const orderStatusLabel: Record<OrderStatus, string> = {
   moderate: 'На модерации',
