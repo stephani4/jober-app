@@ -28,6 +28,13 @@ async function onLogout(): Promise<void> {
           Заказы
         </RouterLink>
         <RouterLink
+          :to="{ name: 'users' }"
+          class="block rounded-lg px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white"
+          active-class="bg-white/15 text-white"
+        >
+          Пользователи
+        </RouterLink>
+        <RouterLink
           :to="{ name: 'working-areas' }"
           class="block rounded-lg px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white"
           active-class="bg-white/15 text-white"

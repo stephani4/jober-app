@@ -10,14 +10,24 @@ const MIN_QUERY_LENGTH = 2
 
 /**
  * Поиск точки на карте через VK Maps Suggest (адрес и название здания).
+ * При `options.onlyBuildings` из выдачи исключаются улицы, города и районы —
+ * выбирать можно только здания.
  */
-export function useVkMapsPlaceSearch(getLocation: () => VkMapsLatLon | null) {
+export function useVkMapsPlaceSearch(
+  getLocation: () => VkMapsLatLon | null,
+  options?: { onlyBuildings?: boolean },
+) {
   const query = ref('')
   const suggestions = ref<VkMapsSuggestItem[]>([])
   const loading = ref(false)
   const resolving = ref(false)
   const open = ref(false)
   const error = ref('')
+
+  const searchOptions = () => ({
+    location: getLocation(),
+    kind: options?.onlyBuildings ? ('buildings' as const) : undefined,
+  })
 
   let timer: ReturnType<typeof setTimeout> | null = null
   let abort: AbortController | null = null
@@ -72,7 +82,7 @@ export function useVkMapsPlaceSearch(getLocation: () => VkMapsLatLon | null) {
 
     try {
       const results = await vkMapsGeocodingService.suggest(q, {
-        location: getLocation(),
+        ...searchOptions(),
         signal: abort.signal,
       })
       if (id !== requestId) {
@@ -103,9 +113,7 @@ export function useVkMapsPlaceSearch(getLocation: () => VkMapsLatLon | null) {
     resolving.value = true
     error.value = ''
     try {
-      const place = await vkMapsGeocodingService.resolveSuggest(item, {
-        location: getLocation(),
-      })
+      const place = await vkMapsGeocodingService.resolveSuggest(item, searchOptions())
       if (!place) {
         error.value = 'Не удалось найти точку на карте. Выберите другое место или укажите точку вручную.'
         return null

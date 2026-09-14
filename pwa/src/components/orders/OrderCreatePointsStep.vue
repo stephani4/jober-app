@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import VkMapPicker from '@/components/map/VkMapPicker.vue'
+import BuildingDetailsFields from '@/components/orders/BuildingDetailsFields.vue'
 import type { DraftOrderPoint } from '@/stores/orderCreate'
 
 const props = defineProps<{
@@ -104,6 +105,28 @@ function pointLabel(point: DraftOrderPoint): string {
         />
 
         <p class="mt-3 text-sm text-text-secondary">{{ pointLabel(element) }}</p>
+
+        <div
+          v-if="element.lat != null && element.lon != null"
+          class="mt-2 flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            class="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+          <span>Здание выбрано</span>
+        </div>
+
+        <BuildingDetailsFields v-if="element.lat != null && element.lon != null" :point="element" />
+
         <button
           type="button"
           class="mt-2 w-full rounded-xl border border-border-subtle px-4 py-3 text-sm text-text-primary dark:border-white/10 dark:text-zinc-100"

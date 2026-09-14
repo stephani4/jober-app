@@ -9,6 +9,14 @@ export interface DraftOrderPoint {
   address: string | null
   lat: number | null
   lon: number | null
+  /** Подъезд выбранного здания (необязательно). */
+  entrance: number | null
+  /** Этаж выбранного здания (необязательно). */
+  floor: number | null
+  /** Квартира/офис в выбранном здании (необязательно). */
+  apartment: string | null
+  /** Код домофона выбранного здания (необязательно). */
+  intercom: number | null
 }
 
 function createPoint(): DraftOrderPoint {
@@ -18,6 +26,10 @@ function createPoint(): DraftOrderPoint {
     address: null,
     lat: null,
     lon: null,
+    entrance: null,
+    floor: null,
+    apartment: null,
+    intercom: null,
   }
 }
 
@@ -86,6 +98,10 @@ export const useOrderCreateStore = defineStore('orderCreate', () => {
         lat: Number(point.lat),
         lon: Number(point.lon),
         position: index + 1,
+        entrance: point.entrance,
+        floor: point.floor,
+        apartment: point.apartment?.trim() || null,
+        intercom: point.intercom,
       })),
     }
   }

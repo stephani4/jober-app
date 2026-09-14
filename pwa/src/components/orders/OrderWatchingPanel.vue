@@ -1,8 +1,17 @@
 <script setup lang="ts">
+import PointAccessDetails from '@/components/orders/PointAccessDetails.vue'
+
 defineProps<{
   stepLabel: string
   description: string
   address: string | null
+  /** Данные доступа в здание текущей точки исполнителя (подъезд, этаж, квартира, домофон). */
+  accessPoint?: {
+    entrance?: number | null
+    floor?: number | null
+    apartment?: string | null
+    intercom?: number | null
+  } | null
   error: string
   /** Заказ на этапе подтверждения: все точки пройдены, ждём код от автора. */
   awaitingConfirmation?: boolean
@@ -22,6 +31,7 @@ defineProps<{
     <p v-if="address" class="mt-1 text-sm text-text-secondary">
       {{ address }}
     </p>
+    <PointAccessDetails :point="accessPoint" />
     <!-- Этап подтверждения: автору показываем код, который нужно передать исполнителю. -->
     <p
       v-if="confirmationNumber"

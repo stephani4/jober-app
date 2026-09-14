@@ -49,6 +49,8 @@ const pointDescription = computed(() => {
 })
 
 const pointAddress = computed(() => currentPoint.value?.order_point?.address ?? null)
+
+const pointAccess = computed(() => currentPoint.value?.order_point ?? null)
 </script>
 
 <template>
@@ -72,6 +74,7 @@ const pointAddress = computed(() => currentPoint.value?.order_point?.address ?? 
         :step-label="stepLabel"
         :description="pointDescription"
         :address="pointAddress"
+        :access-point="pointAccess"
         :awaiting-confirmation="awaitingConfirmation"
         :confirmation-number="confirmationNumber"
         :error="error || routeError"

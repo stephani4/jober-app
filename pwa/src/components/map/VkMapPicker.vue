@@ -30,6 +30,14 @@ let marker: InstanceType<typeof mmrgl.Marker> | null = null
 let userMarker: InstanceType<typeof mmrgl.Marker> | null = null
 let disposed = false
 
+/** Слои тайлов, в которых лежат здания (fill / fill-extrusion из main_style.json). */
+const BUILDING_LAYERS = ['building background', 'building', 'building extrusion']
+/** Допуск в пикселях вокруг клика, чтобы попадание в здание было «прощающим». */
+const BUILDING_QUERY_TOLERANCE = 6
+
+/** Ошибка выбора точки: клик мимо здания. */
+const mapError = ref('')
+
 function hasSelectedPoint(): boolean {
   return props.lon != null && props.lat != null
 }
@@ -56,7 +64,7 @@ const {
   resolve,
   close,
   reopen,
-} = useVkMapsPlaceSearch(currentLocation)
+} = useVkMapsPlaceSearch(currentLocation, { onlyBuildings: true })
 
 function createUserMarkerElement(): HTMLDivElement {
   const el = document.createElement('div')
@@ -103,8 +111,34 @@ function applyPlace(lat: number, lon: number, address: string | null, fly: boole
   emit('select', { lat, lon, address })
 }
 
-async function onMapClick(event: { lngLat: { lng: number; lat: number } }): Promise<void> {
+/**
+ * Попал ли клик в здание на карте: проверяем рендер тайлов по слоям зданий.
+ * На низком зуме тайлы зданий ещё не подгружены, поэтому выбирать нужно, приблизившись к дому.
+ */
+function isBuildingAt(point: { x: number; y: number }): boolean {
+  if (!map) {
+    return false
+  }
+  const features = map.queryRenderedFeatures(
+    [
+      [point.x - BUILDING_QUERY_TOLERANCE, point.y - BUILDING_QUERY_TOLERANCE],
+      [point.x + BUILDING_QUERY_TOLERANCE, point.y + BUILDING_QUERY_TOLERANCE],
+    ],
+    { layers: BUILDING_LAYERS },
+  )
+  return features.length > 0
+}
+
+async function onMapClick(event: {
+  lngLat: { lng: number; lat: number }
+  point?: { x: number; y: number }
+}): Promise<void> {
   close()
+  if (!event.point || !isBuildingAt(event.point)) {
+    mapError.value = 'Выберите здание: нажмите на дом на карте.'
+    return
+  }
+  mapError.value = ''
   const lon = event.lngLat.lng
   const lat = event.lngLat.lat
   placeMarker([lon, lat])
@@ -118,6 +152,7 @@ async function onPickSuggestion(item: VkMapsSuggestItem): Promise<void> {
   if (!place) {
     return
   }
+  mapError.value = ''
   applyPlace(place.lat, place.lon, place.address, true)
 }
 
@@ -259,6 +294,12 @@ onBeforeUnmount(() => {
       </div>
 
       <p v-if="error" class="mt-2 text-sm text-rose-300">{{ error }}</p>
+      <p v-if="mapError" class="mt-2 rounded-xl bg-rose-500/15 px-3 py-2 text-sm text-rose-200">
+        {{ mapError }}
+      </p>
+      <p class="mt-2 text-xs text-text-on-hero-muted">
+        Выбирать можно только здания: нажмите на дом или найдите адрес в поиске.
+      </p>
     </div>
     <div ref="container" class="min-h-0 flex-1" />
   </div>

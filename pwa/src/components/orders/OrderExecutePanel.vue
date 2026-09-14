@@ -1,8 +1,17 @@
 <script setup lang="ts">
+import PointAccessDetails from '@/components/orders/PointAccessDetails.vue'
+
 defineProps<{
   stepLabel: string
   description: string
   address: string | null
+  /** Данные доступа в здание текущей точки (подъезд, этаж, квартира, домофон). */
+  accessPoint?: {
+    entrance?: number | null
+    floor?: number | null
+    apartment?: string | null
+    intercom?: number | null
+  } | null
   isLast: boolean
   submitting: boolean
   error: string
@@ -25,6 +34,7 @@ const emit = defineEmits<{
     <p v-if="address" class="mt-1 text-sm text-text-secondary">
       {{ address }}
     </p>
+    <PointAccessDetails :point="accessPoint" />
     <p v-if="geoError" class="mt-3 text-sm text-accent-danger">
       {{ geoError }}
     </p>

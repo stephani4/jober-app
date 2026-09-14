@@ -15,6 +15,24 @@ const costLabel = computed(() =>
     props.cost ?? 0,
   ),
 )
+
+/** Короткая строка данных доступа в здание, например «Подъезд 2 · Этаж 5 · Кв. 12». */
+function accessParts(point: DraftOrderPoint): string[] {
+  const parts: string[] = []
+  if (point.entrance != null) {
+    parts.push(`Подъезд ${point.entrance}`)
+  }
+  if (point.floor != null) {
+    parts.push(`Этаж ${point.floor}`)
+  }
+  if (point.apartment) {
+    parts.push(`Кв. ${point.apartment}`)
+  }
+  if (point.intercom != null) {
+    parts.push(`Домофон ${point.intercom}`)
+  }
+  return parts
+}
 </script>
 
 <template>
@@ -42,6 +60,9 @@ const costLabel = computed(() =>
         <p class="mt-1 text-text-primary dark:text-zinc-100">{{ point.description }}</p>
         <p class="mt-1 text-sm text-text-secondary">
           {{ point.address || `${point.lat}, ${point.lon}` }}
+        </p>
+        <p v-if="accessParts(point).length" class="mt-2 text-xs text-text-secondary">
+          {{ accessParts(point).join(' · ') }}
         </p>
       </article>
     </section>

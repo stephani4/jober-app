@@ -12,6 +12,50 @@ export type VkMapsSuggestItem = {
   pin: VkMapsLatLon | null
 }
 
+export type VkMapsSearchOptions = {
+  location?: VkMapsLatLon | null
+  signal?: AbortSignal
+  /** Режим «только здания»: отсекает улицы, города и районы из результатов поиска. */
+  kind?: 'buildings'
+}
+
+/** Типы, которые не являются зданием и не могут быть точкой доставки. */
+const NON_BUILDING_TYPES = new Set([
+  'street',
+  'city',
+  'neighbourhood',
+  'locality',
+  'area',
+  'district',
+  'region',
+  'province',
+  'country',
+  'territory',
+  'airport',
+  'station',
+  'water',
+  'waterway',
+  'forest',
+  'park',
+])
+
+/**
+ * Является ли результат поиска зданием: тип `building` либо категория POI (например `shop/general/mall`),
+ * которая физически находится внутри здания.
+ */
+export function isBuildingPoint(type: string | null | undefined): boolean {
+  if (type == null) {
+    return true
+  }
+  if (type === 'building') {
+    return true
+  }
+  if (NON_BUILDING_TYPES.has(type)) {
+    return false
+  }
+  return type.includes('/')
+}
+
 type ApiResultItem = {
   name?: string
   address?: string
@@ -36,13 +80,16 @@ export class VkMapsGeocodingService {
    */
   async suggest(
     query: string,
-    options?: { location?: VkMapsLatLon | null; signal?: AbortSignal },
+    options?: VkMapsSearchOptions,
   ): Promise<VkMapsSuggestItem[]> {
     const [addresses, places] = await Promise.all([
       this.fetchResults('suggest', query, options),
       this.fetchResults('places', query, options),
     ])
-    return this.dedupe([...addresses, ...places])
+    const merged = this.dedupe([...addresses, ...places])
+    return options?.kind === 'buildings'
+      ? merged.filter((item) => isBuildingPoint(item.type))
+      : merged
   }
 
   /**
@@ -50,10 +97,14 @@ export class VkMapsGeocodingService {
    */
   async geocode(
     query: string,
-    options?: { location?: VkMapsLatLon | null; signal?: AbortSignal },
+    options?: VkMapsSearchOptions,
   ): Promise<(VkMapsLatLon & { address: string | null }) | null> {
-    const results = await this.fetchResults('search', query, { ...options, limit: 1 })
-    const first = results[0]
+    const onlyBuildings = options?.kind === 'buildings'
+    const results = await this.fetchResults('search', query, {
+      ...options,
+      limit: onlyBuildings ? 8 : 1,
+    })
+    const first = onlyBuildings ? results.find((item) => isBuildingPoint(item.type)) : results[0]
     if (!first?.pin) {
       return null
     }
@@ -93,8 +144,12 @@ export class VkMapsGeocodingService {
    */
   async resolveSuggest(
     item: VkMapsSuggestItem,
-    options?: { location?: VkMapsLatLon | null; signal?: AbortSignal },
+    options?: VkMapsSearchOptions,
   ): Promise<(VkMapsLatLon & { address: string | null }) | null> {
+    if (options?.kind === 'buildings' && !isBuildingPoint(item.type)) {
+      return null
+    }
+
     const label = this.formatLabel(item.name, item.address)
     if (item.pin) {
       return { ...item.pin, address: label }

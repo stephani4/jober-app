@@ -23,6 +23,11 @@ export const orderPointSchema = z.object({
   lon: z.number().nullable(),
   position: z.number().int().positive(),
   cost: z.number().optional(),
+  // Данные доступа в здание: заполняются при создании, если выбран дом.
+  entrance: z.number().int().nullable().optional(),
+  floor: z.number().int().nullable().optional(),
+  apartment: z.string().nullable().optional(),
+  intercom: z.number().int().nullable().optional(),
 })
 
 export const orderSchema = z.object({
@@ -80,6 +85,10 @@ export const createOrderPointPayloadSchema = z.object({
   lat: z.number(),
   lon: z.number(),
   position: z.number().int().positive().optional(),
+  entrance: z.number().int().min(0).nullable().optional(),
+  floor: z.number().int().min(0).nullable().optional(),
+  apartment: z.string().trim().max(20).nullable().optional(),
+  intercom: z.number().int().min(0).nullable().optional(),
 })
 
 export const createOrderPayloadSchema = z.object({
