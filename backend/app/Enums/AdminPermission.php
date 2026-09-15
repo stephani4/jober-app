@@ -10,4 +10,5 @@ enum AdminPermission: string
     case OrdersView = 'orders.view';
     case OrdersApprove = 'orders.approve';
     case OrdersCancel = 'orders.cancel';
+    case UsersView = 'users.view';
 }

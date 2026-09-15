@@ -9,13 +9,13 @@ import {
   type OrderTypeList,
 } from '@/schemas/order'
 
-/** Значения фильтров списка заказов (числа приходят строками из полей формы). */
+/** Значения фильтров списка заказов (числа приходят из PrimeVue InputNumber). */
 export interface OrderListFilters {
   status: OrderStatus | 'all'
-  id?: string
-  order_type_id?: string
-  cost_min?: string
-  cost_max?: string
+  id?: number
+  order_type_id?: number
+  cost_min?: number
+  cost_max?: number
 }
 
 /**
@@ -26,10 +26,10 @@ export class AdminOrderService {
     const { data } = await http.client.get('/admin/orders', {
       params: {
         status: filters.status,
-        id: filters.id || undefined,
-        order_type_id: filters.order_type_id || undefined,
-        cost_min: filters.cost_min || undefined,
-        cost_max: filters.cost_max || undefined,
+        id: filters.id ?? undefined,
+        order_type_id: filters.order_type_id ?? undefined,
+        cost_min: filters.cost_min ?? undefined,
+        cost_max: filters.cost_max ?? undefined,
         cursor: cursor ?? undefined,
       },
     })

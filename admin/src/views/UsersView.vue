@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { isAxiosError } from 'axios'
+import Button from 'primevue/button'
+import DatePicker from 'primevue/datepicker'
+import InputText from 'primevue/inputtext'
+import Select from 'primevue/select'
 import { useAdminUsers } from '@/composables'
 import { userRoleLabel, type UserRole } from '@/schemas/user'
 
@@ -9,9 +13,19 @@ const { items, loading, loadingMore, nextCursor, fetchFirst, loadMore } = useAdm
 const form = reactive({
   name: '',
   email: '',
-  birth_date: '',
-  role: '' as UserRole | '',
+  birth_date: null as Date | null,
+  role: null as UserRole | null,
 })
+
+/** Опции фильтра «Роль» (первая опция — «все роли»). */
+const roleOptions: { label: string; value: UserRole | null }[] = [
+  { label: 'Все роли', value: null },
+  { label: userRoleLabel.customer, value: 'customer' },
+  { label: userRoleLabel.executor, value: 'executor' },
+]
+
+/** Дата рождения не может быть в будущем. */
+const maxBirthDate = new Date()
 
 const error = ref('')
 
@@ -19,14 +33,24 @@ onMounted(() => {
   void fetchFirst()
 })
 
+/** Date из DatePicker → строка 'YYYY-MM-DD' для API. */
+function dateToKey(value: Date | null): string | undefined {
+  if (!value) {
+    return undefined
+  }
+  const month = String(value.getMonth() + 1).padStart(2, '0')
+  const day = String(value.getDate()).padStart(2, '0')
+  return `${value.getFullYear()}-${month}-${day}`
+}
+
 async function onApply(): Promise<void> {
   error.value = ''
   try {
     await fetchFirst({
       name: form.name.trim() || undefined,
       email: form.email.trim() || undefined,
-      birth_date: form.birth_date || undefined,
-      role: form.role || undefined,
+      birth_date: dateToKey(form.birth_date),
+      role: form.role ?? undefined,
     })
   } catch (err) {
     error.value = extractError(err, 'Не удалось загрузить пользователей.')
@@ -36,8 +60,8 @@ async function onApply(): Promise<void> {
 function onReset(): void {
   form.name = ''
   form.email = ''
-  form.birth_date = ''
-  form.role = ''
+  form.birth_date = null
+  form.role = null
   void onApply()
 }
 
@@ -65,58 +89,61 @@ function extractError(err: unknown, fallback: string): string {
       class="flex flex-wrap items-end gap-3"
       @submit.prevent="onApply"
     >
-      <label class="flex flex-col gap-1 text-sm">
+      <label class="flex w-48 flex-col gap-1 text-sm" for="filter-user-name">
         <span class="text-text-secondary">Имя</span>
-        <input
+        <InputText
           v-model="form.name"
-          type="text"
+          id="filter-user-name"
+          fluid
           placeholder="Иван"
-          class="w-48 rounded-lg border border-border-subtle bg-white px-3 py-2 dark:border-white/10 dark:bg-zinc-900"
-        >
+        />
       </label>
-      <label class="flex flex-col gap-1 text-sm">
+      <label class="flex w-56 flex-col gap-1 text-sm" for="filter-user-email">
         <span class="text-text-secondary">Email</span>
-        <input
+        <InputText
           v-model="form.email"
-          type="text"
+          id="filter-user-email"
+          fluid
           placeholder="ivan@example.com"
-          class="w-56 rounded-lg border border-border-subtle bg-white px-3 py-2 dark:border-white/10 dark:bg-zinc-900"
-        >
+        />
       </label>
-      <label class="flex flex-col gap-1 text-sm">
+      <label class="flex w-44 flex-col gap-1 text-sm" for="filter-user-birth-date">
         <span class="text-text-secondary">Дата рождения</span>
-        <input
+        <DatePicker
           v-model="form.birth_date"
-          type="date"
-          class="rounded-lg border border-border-subtle bg-white px-3 py-2 dark:border-white/10 dark:bg-zinc-900"
-        >
+          input-id="filter-user-birth-date"
+          date-format="yy-mm-dd"
+          placeholder="ГГГГ-ММ-ДД"
+          show-icon
+          fluid
+          :max-date="maxBirthDate"
+        />
       </label>
-      <label class="flex flex-col gap-1 text-sm">
+      <label class="flex w-44 flex-col gap-1 text-sm" for="filter-user-role">
         <span class="text-text-secondary">Роль</span>
-        <select
+        <Select
           v-model="form.role"
-          class="rounded-lg border border-border-subtle bg-white px-3 py-2 dark:border-white/10 dark:bg-zinc-900"
-        >
-          <option value="">Все</option>
-          <option value="customer">Заказчик</option>
-          <option value="executor">Исполнитель</option>
-        </select>
+          input-id="filter-user-role"
+          :options="roleOptions"
+          option-label="label"
+          option-value="value"
+          placeholder="Все роли"
+          fluid
+        />
       </label>
-      <button
+      <Button
         type="submit"
-        class="rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-        :disabled="loading"
-      >
-        Применить
-      </button>
-      <button
+        label="Применить"
+        :loading="loading"
+      />
+      <Button
         type="button"
-        class="rounded-lg border border-border-subtle px-4 py-2 text-sm dark:border-white/10"
+        label="Сбросить"
+        severity="secondary"
+        variant="outlined"
         :disabled="loading"
         @click="onReset"
-      >
-        Сбросить
-      </button>
+      />
     </form>
 
     <p
@@ -180,14 +207,12 @@ function extractError(err: unknown, fallback: string): string {
       </table>
     </div>
 
-    <button
+    <Button
       v-if="nextCursor"
-      type="button"
-      class="rounded-xl border border-border-subtle px-4 py-2 text-sm dark:border-white/10"
-      :disabled="loadingMore"
+      variant="outlined"
+      label="Ещё"
+      :loading="loadingMore"
       @click="loadMore"
-    >
-      {{ loadingMore ? 'Загружаем…' : 'Ещё' }}
-    </button>
+    />
   </section>
 </template>

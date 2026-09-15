@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { isAxiosError } from 'axios'
+import Button from 'primevue/button'
+import InputNumber from 'primevue/inputnumber'
+import Select from 'primevue/select'
 import CancelReasonDialog from '@/components/CancelReasonDialog.vue'
 import { useAdminOrders, useAuth } from '@/composables'
 import { orderStatusLabel, type Order, type OrderStatus } from '@/schemas/order'
@@ -22,12 +25,27 @@ const {
 const DEFAULT_STATUS: OrderStatus | 'all' = 'moderate'
 
 const form = reactive({
-  id: '',
-  order_type_id: '',
-  cost_min: '',
-  cost_max: '',
-  status: DEFAULT_STATUS,
+  id: null as number | null,
+  order_type_id: null as number | null,
+  cost_min: null as number | null,
+  cost_max: null as number | null,
+  status: DEFAULT_STATUS as OrderStatus | 'all',
 })
+
+/** Опции фильтра «Вид заказа» (первая опция — «все виды»). */
+const typeOptions = computed(() => [
+  { label: 'Все виды', value: null },
+  ...types.value.map((type) => ({ label: type.name, value: type.id })),
+])
+
+/** Опции фильтра «Статус» (значения = ключи orderStatusLabel + all). */
+const statusOptions: { label: string; value: OrderStatus | 'all' }[] = [
+  { label: 'Все', value: 'all' },
+  ...(Object.entries(orderStatusLabel) as [OrderStatus, string][]).map(([value, label]) => ({
+    label,
+    value,
+  })),
+]
 
 const error = ref('')
 const busyId = ref<number | null>(null)
@@ -42,10 +60,10 @@ async function onApply(): Promise<void> {
   error.value = ''
   try {
     await fetchFirst({
-      id: form.id.trim() || undefined,
-      order_type_id: form.order_type_id || undefined,
-      cost_min: form.cost_min || undefined,
-      cost_max: form.cost_max || undefined,
+      id: form.id ?? undefined,
+      order_type_id: form.order_type_id ?? undefined,
+      cost_min: form.cost_min ?? undefined,
+      cost_max: form.cost_max ?? undefined,
       status: form.status,
     })
   } catch (err) {
@@ -54,10 +72,10 @@ async function onApply(): Promise<void> {
 }
 
 function onReset(): void {
-  form.id = ''
-  form.order_type_id = ''
-  form.cost_min = ''
-  form.cost_max = ''
+  form.id = null
+  form.order_type_id = null
+  form.cost_min = null
+  form.cost_max = null
   form.status = DEFAULT_STATUS
   void onApply()
 }
@@ -130,81 +148,76 @@ function costLabel(value: number): string {
       class="flex flex-wrap items-end gap-3"
       @submit.prevent="onApply"
     >
-      <label class="flex flex-col gap-1 text-sm">
+      <label class="flex w-36 flex-col gap-1 text-sm" for="filter-order-id">
         <span class="text-text-secondary">Номер заказа</span>
-        <input
+        <InputNumber
           v-model="form.id"
-          type="number"
-          min="1"
+          input-id="filter-order-id"
+          fluid
+          :use-grouping="false"
+          :min="1"
           placeholder="№"
-          class="w-36 rounded-lg border border-border-subtle bg-white px-3 py-2 dark:border-white/10 dark:bg-zinc-900"
-        >
+        />
       </label>
-      <label class="flex flex-col gap-1 text-sm">
+      <label class="flex w-52 flex-col gap-1 text-sm" for="filter-order-type">
         <span class="text-text-secondary">Вид заказа</span>
-        <select
+        <Select
           v-model="form.order_type_id"
-          class="rounded-lg border border-border-subtle bg-white px-3 py-2 dark:border-white/10 dark:bg-zinc-900"
-        >
-          <option value="">Все виды</option>
-          <option
-            v-for="type in types"
-            :key="type.id"
-            :value="String(type.id)"
-          >
-            {{ type.name }}
-          </option>
-        </select>
+          input-id="filter-order-type"
+          :options="typeOptions"
+          option-label="label"
+          option-value="value"
+          placeholder="Все виды"
+          fluid
+        />
       </label>
-      <label class="flex flex-col gap-1 text-sm">
+      <label class="flex w-32 flex-col gap-1 text-sm" for="filter-cost-min">
         <span class="text-text-secondary">Стоимость от</span>
-        <input
+        <InputNumber
           v-model="form.cost_min"
-          type="number"
-          min="0"
+          input-id="filter-cost-min"
+          fluid
+          :min="0"
+          :max-fraction-digits="2"
           placeholder="0"
-          class="w-32 rounded-lg border border-border-subtle bg-white px-3 py-2 dark:border-white/10 dark:bg-zinc-900"
-        >
+        />
       </label>
-      <label class="flex flex-col gap-1 text-sm">
+      <label class="flex w-32 flex-col gap-1 text-sm" for="filter-cost-max">
         <span class="text-text-secondary">Стоимость до</span>
-        <input
+        <InputNumber
           v-model="form.cost_max"
-          type="number"
-          min="0"
+          input-id="filter-cost-max"
+          fluid
+          :min="0"
+          :max-fraction-digits="2"
           placeholder="∞"
-          class="w-32 rounded-lg border border-border-subtle bg-white px-3 py-2 dark:border-white/10 dark:bg-zinc-900"
-        >
+        />
       </label>
-      <label class="flex flex-col gap-1 text-sm">
+      <label class="flex w-52 flex-col gap-1 text-sm" for="filter-status">
         <span class="text-text-secondary">Статус</span>
-        <select
+        <Select
           v-model="form.status"
-          class="rounded-lg border border-border-subtle bg-white px-3 py-2 dark:border-white/10 dark:bg-zinc-900"
-        >
-          <option value="all">Все</option>
-          <option value="moderate">На модерации</option>
-          <option value="wait">Ожидают</option>
-          <option value="process">Выполняется</option>
-          <option value="complete">Исполнено</option>
-          <option value="cancel">Отклонённые</option>
-        </select>
+          input-id="filter-status"
+          :options="statusOptions"
+          option-label="label"
+          option-value="value"
+          placeholder="Статус"
+          fluid
+        />
       </label>
-      <button
+      <Button
         type="submit"
-        class="rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-        :disabled="loading"
-      >
-        Применить
-      </button>
-      <button
+        label="Применить"
+        :loading="loading"
+      />
+      <Button
         type="button"
-        class="rounded-lg border border-border-subtle px-4 py-2 text-sm dark:border-white/10"
+        label="Сбросить"
+        severity="secondary"
+        variant="outlined"
         :disabled="loading"
         @click="onReset"
-      >
-        Сбросить
-      </button>
+      />
     </form>
 
     <p v-if="error" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -251,24 +264,22 @@ function costLabel(value: number): string {
             <td class="px-4 py-3">{{ orderStatusLabel[order.status] }}</td>
             <td class="px-4 py-3">
               <div v-if="order.status === 'moderate'" class="flex flex-col gap-2">
-                <button
+                <Button
                   v-if="can('orders.approve')"
-                  type="button"
-                  class="rounded-lg bg-zinc-900 px-3 py-2 text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-                  :disabled="busyId === order.id"
+                  size="small"
+                  label="Одобрить"
+                  :loading="busyId === order.id"
                   @click="onApprove(order)"
-                >
-                  Одобрить
-                </button>
-                <button
+                />
+                <Button
                   v-if="can('orders.cancel')"
-                  type="button"
-                  class="rounded-lg border border-accent-danger px-3 py-2 text-accent-danger disabled:opacity-50"
+                  size="small"
+                  severity="danger"
+                  variant="outlined"
+                  label="Отклонить"
                   :disabled="busyId === order.id"
                   @click="cancelTarget = order"
-                >
-                  Отклонить
-                </button>
+                />
               </div>
             </td>
           </tr>
@@ -276,15 +287,13 @@ function costLabel(value: number): string {
       </table>
     </div>
 
-    <button
+    <Button
       v-if="nextCursor"
-      type="button"
-      class="rounded-xl border border-border-subtle px-4 py-2 text-sm dark:border-white/10"
-      :disabled="loadingMore"
+      variant="outlined"
+      label="Ещё"
+      :loading="loadingMore"
       @click="loadMore"
-    >
-      {{ loadingMore ? 'Загружаем…' : 'Ещё' }}
-    </button>
+    />
 
     <CancelReasonDialog
       :open="cancelTarget != null"

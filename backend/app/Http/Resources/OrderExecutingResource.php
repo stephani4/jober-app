@@ -50,6 +50,10 @@ class OrderExecutingResource extends JsonResource
                             'lon' => $point->orderPoint->lon !== null ? (float) $point->orderPoint->lon : null,
                             'position' => (int) $point->orderPoint->position,
                             'cost' => (float) $point->orderPoint->cost,
+                            'entrance' => $point->orderPoint->entrance !== null ? (int) $point->orderPoint->entrance : null,
+                            'floor' => $point->orderPoint->floor !== null ? (int) $point->orderPoint->floor : null,
+                            'apartment' => $point->orderPoint->apartment,
+                            'intercom' => $point->orderPoint->intercom !== null ? (int) $point->orderPoint->intercom : null,
                         ]
                         : null,
                 ])

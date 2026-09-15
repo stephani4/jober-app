@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
 import { useLoginForm } from '@/composables'
 
 const emit = defineEmits<{
@@ -21,12 +23,11 @@ async function onSubmit(): Promise<void> {
   >
     <div class="space-y-2">
       <label class="block text-sm text-slate-600 dark:text-slate-300" for="login">Email</label>
-      <input
+      <InputText
         id="login"
         v-model="form.login"
-        type="text"
+        fluid
         autocomplete="username"
-        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-zinc-800 dark:border-slate-700 dark:bg-zinc-950 dark:text-zinc-100"
         @blur="v$.login.$touch()"
       />
       <p v-if="v$.login.$error" class="text-sm text-accent-danger">
@@ -35,12 +36,12 @@ async function onSubmit(): Promise<void> {
     </div>
     <div class="space-y-2">
       <label class="block text-sm text-slate-600 dark:text-slate-300" for="password">Пароль</label>
-      <input
+      <InputText
         id="password"
         v-model="form.password"
         type="password"
+        fluid
         autocomplete="current-password"
-        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-zinc-800 dark:border-slate-700 dark:bg-zinc-950 dark:text-zinc-100"
         @blur="v$.password.$touch()"
       />
       <p v-if="v$.password.$error" class="text-sm text-accent-danger">
@@ -53,12 +54,12 @@ async function onSubmit(): Promise<void> {
     >
       {{ error }}
     </p>
-    <button
+    <Button
       type="submit"
+      class="w-full"
+      :label="loading ? 'Входим…' : 'Войти'"
+      :loading="loading"
       :disabled="!canSubmit"
-      class="w-full rounded-xl bg-zinc-900 px-4 py-3 text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-    >
-      {{ loading ? 'Входим…' : 'Войти' }}
-    </button>
+    />
   </form>
 </template>

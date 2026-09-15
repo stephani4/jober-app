@@ -45,6 +45,10 @@ class OrderResource extends JsonResource
                 'lon' => $point->lon !== null ? (float) $point->lon : null,
                 'position' => (int) $point->position,
                 'cost' => (float) $point->cost,
+                'entrance' => $point->entrance !== null ? (int) $point->entrance : null,
+                'floor' => $point->floor !== null ? (int) $point->floor : null,
+                'apartment' => $point->apartment,
+                'intercom' => $point->intercom !== null ? (int) $point->intercom : null,
             ])->values()->all()),
         ];
     }

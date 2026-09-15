@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { isAxiosError } from 'axios'
+import Button from 'primevue/button'
 import { workingAreaService, type WorkingArea } from '@/services/WorkingAreaService'
 
 const router = useRouter()
@@ -47,13 +48,10 @@ async function onDelete(id: number) {
         <h1 class="text-2xl font-semibold">Рабочие зоны</h1>
         <p class="mt-1 text-sm text-text-secondary">Управление географическими областями работы.</p>
       </div>
-      <button
-        type="button"
-        class="rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white dark:bg-zinc-100 dark:text-zinc-900"
+      <Button
+        label="Создать зону"
         @click="router.push({ name: 'working-areas-create' })"
-      >
-        Создать зону
-      </button>
+      />
     </div>
 
     <p v-if="error" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -94,20 +92,20 @@ async function onDelete(id: number) {
             </td>
             <td class="px-4 py-3 text-right">
               <div class="flex justify-end gap-2">
-                <button
-                  type="button"
-                  class="rounded-lg border border-border-subtle px-3 py-1 text-xs hover:bg-zinc-50 dark:border-white/10 dark:hover:bg-zinc-800"
+                <Button
+                  size="small"
+                  severity="secondary"
+                  variant="outlined"
+                  label="Редактировать"
                   @click="router.push({ name: 'working-areas-edit', params: { id: area.id } })"
-                >
-                  Редактировать
-                </button>
-                <button
-                  type="button"
-                  class="rounded-lg border border-rose-200 px-3 py-1 text-xs text-rose-600 hover:bg-rose-50 dark:border-rose-900/30 dark:hover:bg-rose-900/20"
+                />
+                <Button
+                  size="small"
+                  severity="danger"
+                  variant="outlined"
+                  label="Удалить"
                   @click="onDelete(area.id)"
-                >
-                  Удалить
-                </button>
+                />
               </div>
             </td>
           </tr>

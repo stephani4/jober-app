@@ -2,7 +2,11 @@
 import { onMounted, ref, nextTick, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { isAxiosError } from 'axios'
-import { workingAreaService, type WorkingArea } from '@/services/WorkingAreaService'
+import AutoComplete from 'primevue/autocomplete'
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import Select from 'primevue/select'
+import { workingAreaService } from '@/services/WorkingAreaService'
 import { configureVkMapsSdk, vkMapsStyle } from '@/config/vkMaps'
 import { useVkMapsPlaceSearch } from '@/composables/useVkMapsPlaceSearch'
 
@@ -22,17 +26,23 @@ const form = ref({
   geometry: '',
 })
 
+/** Опции типа зоны для Select. */
+const typeOptions: { label: string; value: 'city' | 'other' }[] = [
+  { label: 'Город', value: 'city' },
+  { label: 'Другое', value: 'other' },
+]
+
 const {
   query,
   suggestions,
   loading,
   resolving,
-  open,
   error: searchError,
   scheduleSuggest,
   resolve,
-  closeSearch,
-  reopenSearch,
+  // В композабле это close/reopen: уточняем имена, т.к. управляют списком подсказок поиска.
+  close: closeSearch,
+  reopen: reopenSearch,
 } = useVkMapsPlaceSearch(() => {
   if (map) {
     const center = map.getCenter()
@@ -47,7 +57,6 @@ const mapRef = ref<HTMLElement | null>(null)
 let map: any = null
 let currentPolygon: any = null
 const clickedPoints = ref<[number, number][]>([])
-const isDrawing = ref(false)
 
 onMounted(async () => {
   if (isEdit) {
@@ -123,22 +132,23 @@ function addPoint(lng: number, lat: number) {
 }
 
 function drawTempPoints() {
-  // Clear previous markers/layers if any
-  if (map.getLayer('temp-points')) {
-    map.removeLayer('temp-points')
+  const data = {
+    type: 'FeatureCollection',
+    features: clickedPoints.value.map(p => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: p },
+      properties: {}
+    }))
   }
 
-  map.addSource('temp-points-source', {
-    type: 'geojson',
-    data: {
-      type: 'FeatureCollection',
-      features: clickedPoints.value.map(p => ({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: p },
-        properties: {}
-      }))
-    }
-  })
+  const source = map.getSource('temp-points-source')
+  if (source) {
+    // Источник уже создан: повторный addSource бросает ошибку, поэтому только обновляем данные.
+    source.setData(data)
+    return
+  }
+
+  map.addSource('temp-points-source', { type: 'geojson', data })
 
   map.addLayer({
     id: 'temp-points',
@@ -288,6 +298,16 @@ async function onSubmit() {
     busy.value = false
   }
 }
+
+/**
+ * Пишет в query только строки: при выборе подсказки AutoComplete
+ * отдаёт моделью объект подсказки, который в query сохранять нельзя.
+ */
+function onSearchInput(value: unknown): void {
+  if (typeof value === 'string') {
+    query.value = value
+  }
+}
 </script>
 <template>
   <section class="space-y-5">
@@ -298,13 +318,12 @@ async function onSubmit() {
         </h1>
         <p class="mt-1 text-sm text-text-secondary">Задайте название и границы зоны на карте.</p>
       </div>
-      <button
-        type="button"
-        class="rounded-lg border border-border-subtle px-4 py-2 text-sm hover:bg-zinc-50 dark:border-white/10 dark:hover:bg-zinc-800"
+      <Button
+        severity="secondary"
+        variant="outlined"
+        label="Отмена"
         @click="router.back()"
-      >
-        Отмена
-      </button>
+      />
     </div>
 
     <p v-if="error" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -314,35 +333,34 @@ async function onSubmit() {
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div class="space-y-4 rounded-2xl border border-border-subtle bg-white p-5 dark:border-white/10 dark:bg-zinc-900">
         <div class="space-y-2">
-          <label class="text-sm font-medium">Название</label>
-          <input
+          <label class="text-sm font-medium" for="working-area-name">Название</label>
+          <InputText
             v-model="form.name"
-            type="text"
-            class="w-full rounded-lg border border-border-subtle bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500 dark:border-white/10"
+            id="working-area-name"
+            fluid
             placeholder="Например: Центр Москвы"
           />
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium">Тип</label>
-          <select
+          <label class="text-sm font-medium" for="working-area-type">Тип</label>
+          <Select
             v-model="form.type"
-            class="w-full rounded-lg border border-border-subtle bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500 dark:border-white/10"
-          >
-            <option value="city">Город</option>
-            <option value="other">Другое</option>
-          </select>
+            input-id="working-area-type"
+            :options="typeOptions"
+            option-label="label"
+            option-value="value"
+            fluid
+          />
         </div>
 
         <div class="pt-4">
-          <button
-            type="button"
-            class="w-full rounded-lg bg-zinc-900 py-2 text-sm text-white transition hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-            :disabled="busy"
+          <Button
+            class="w-full"
+            label="Сохранить зону"
+            :loading="busy"
             @click="onSubmit"
-          >
-            {{ busy ? 'Сохранение…' : 'Сохранить зону' }}
-          </button>
+          />
         </div>
       </div>
 
@@ -350,51 +368,43 @@ async function onSubmit() {
         <div class="relative">
           <div class="absolute inset-x-0 top-3 z-10 px-3">
             <div class="relative max-w-md">
-              <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-text-secondary">
+              <span class="pointer-events-none absolute inset-y-0 left-3 z-10 flex items-center text-text-secondary">
                 <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="11" cy="11" r="7" />
                   <path d="m20 20-3.5-3.5" />
                 </svg>
               </span>
-              <input
-                v-model="query"
-                type="text"
-                class="w-full rounded-full border border-border-subtle bg-white py-2 pl-10 pr-4 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-500 dark:bg-zinc-800 dark:border-white/10"
+              <AutoComplete
+                :model-value="query"
+                input-id="working-area-search"
+                class="w-full"
+                input-class="w-full rounded-full border border-border-subtle bg-white py-2 pl-10 pr-4 text-sm shadow-sm dark:bg-zinc-800 dark:border-white/10"
+                :suggestions="suggestions"
+                option-label="name"
                 placeholder="Поиск адреса или здания..."
-                :disabled="resolving"
-                @input="scheduleSuggest"
+                :min-length="2"
+                :delay="0"
+                :loading="loading || resolving"
+                :complete-on-focus="true"
+                @update:model-value="onSearchInput"
+                @complete="scheduleSuggest"
+                @item-select="onPickSuggestion($event.value)"
                 @focus="reopenSearch"
                 @keydown.escape.prevent="closeSearch"
-              />
-
-              <div
-                v-if="open"
-                class="absolute inset-x-0 top-[calc(100%+0.5rem)] z-20 overflow-hidden rounded-2xl border border-border-subtle bg-white text-text-primary shadow-lg dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100"
               >
-                <p v-if="loading && suggestions.length === 0" class="px-4 py-3 text-sm text-text-secondary">
-                  Ищем…
-                </p>
-                <p v-else-if="!loading && suggestions.length === 0" class="px-4 py-3 text-sm text-text-secondary">
-                  Ничего не найдено
-                </p>
-                <ul v-if="suggestions.length > 0" role="listbox" class="max-h-64 overflow-y-auto py-1">
-                  <li v-for="(item, index) in suggestions" :key="index">
-                    <button
-                      type="button"
-                      role="option"
-                      class="flex w-full flex-col items-start gap-0.5 px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                      :disabled="resolving"
-                      @click="onPickSuggestion(item)"
+                <template #option="{ option }">
+                  <div class="flex flex-col gap-0.5">
+                    <span class="text-sm font-medium">{{ option.name || option.address }}</span>
+                    <span
+                      v-if="option.name && option.address && option.name !== option.address"
+                      class="text-xs text-text-secondary"
                     >
-                      <span class="text-sm font-medium">{{ item.name || item.address }}</span>
-                      <span v-if="item.name && item.address && item.name !== item.address" class="text-xs text-text-secondary">
-                        {{ item.address }}
-                      </span>
-                    </button>
-                  </li>
-                </ul>
-              </div>
-              <p v-if="searchError" class="absolute top-full mt-1 text-xs text-rose-600">
+                      {{ option.address }}
+                    </span>
+                  </div>
+                </template>
+              </AutoComplete>
+              <p v-if="searchError" class="mt-1 text-xs text-rose-600">
                 {{ searchError }}
               </p>
             </div>
@@ -409,21 +419,21 @@ async function onSubmit() {
             * Кликните по карте, чтобы расставить точки зоны. Минимум 3 точки для создания области.
           </p>
           <div class="flex items-center gap-2">
-            <button
-              type="button"
-              class="rounded-md border border-border-subtle px-2 py-1 text-xs hover:bg-zinc-50 dark:border-white/10 dark:hover:bg-zinc-800"
-              @click="undoLastPoint"
+            <Button
+              size="small"
+              severity="secondary"
+              variant="outlined"
+              label="Отменить точку"
               :disabled="clickedPoints.length === 0"
-            >
-              Отменить точку
-            </button>
-            <button
-              type="button"
-              class="rounded-md border border-rose-200 px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 dark:border-rose-900/30 dark:hover:bg-rose-900/20"
+              @click="undoLastPoint"
+            />
+            <Button
+              size="small"
+              severity="danger"
+              variant="outlined"
+              label="Сбросить всё"
               @click="clearPoints"
-            >
-              Сбросить всё
-            </button>
+            />
           </div>
         </div>
       </div>

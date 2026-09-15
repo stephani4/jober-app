@@ -6,7 +6,7 @@ import { useAuth, useNotifications, useOrderChat, useOrderDecline } from '@/comp
 
 const route = useRoute()
 const router = useRouter()
-const { user } = useAuth()
+const { user, hasRole } = useAuth()
 const { unreadCount } = useNotifications()
 const { open: chatOpen, unreadCount: chatUnread, showChat, toggle: toggleChat, close: closeChat } = useOrderChat()
 const decline = useOrderDecline()
@@ -28,7 +28,7 @@ const firstName = computed(() => {
 const chatOnLeft = computed(() => route.name === 'order-execute')
 const showDecline = computed(() => route.name === 'order-execute')
 
-const canSearch = computed(() => user.value?.role === 'executor')
+const canSearch = computed(() => hasRole(['executor']))
 
 const showBack = computed(() => Boolean(route.meta.showBack))
 

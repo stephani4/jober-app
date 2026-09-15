@@ -50,6 +50,37 @@ class OrderServiceTest extends TestCase
         $this->assertSame(1, $order->points[0]->position);
         $this->assertSame(2, $order->points[1]->position);
         $this->assertSame('moderate', $order->status->value);
+        $this->assertNull($order->points[0]->entrance);
+        $this->assertNull($order->points[0]->floor);
+        $this->assertNull($order->points[0]->apartment);
+        $this->assertNull($order->points[0]->intercom);
+    }
+
+    public function test_create_order_saves_building_access_fields(): void
+    {
+        $user = User::factory()->create();
+
+        $order = app(OrderService::class)->create($user, [
+            'order_type_id' => OrderType::BUY_AND_DELIVER,
+            'description' => 'Привезти в офис',
+            'cost' => 900,
+            'points' => [[
+                'description' => 'Коробка с документами',
+                'address' => 'Кемерово, Весенняя 1',
+                'lat' => 55.3545,
+                'lon' => 86.0893,
+                'entrance' => 2,
+                'floor' => 5,
+                'apartment' => '12',
+                'intercom' => 1234,
+            ]],
+        ]);
+
+        $point = $order->points->first();
+        $this->assertSame(2, (int) $point->entrance);
+        $this->assertSame(5, (int) $point->floor);
+        $this->assertSame('12', $point->apartment);
+        $this->assertSame(1234, (int) $point->intercom);
     }
 
     public function test_buy_and_deliver_accepts_single_point(): void

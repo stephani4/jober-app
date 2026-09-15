@@ -20,6 +20,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'lon',
     'position',
     'cost',
+    'entrance',
+    'floor',
+    'apartment',
+    'intercom'
 ])]
 class OrderPoint extends Model
 {

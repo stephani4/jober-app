@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuth } from '@/composables'
+import { authMiddleware, guestMiddleware, roleMiddleware } from '@/router/middleware'
+import '@/router/types' // декларация meta.middleware / meta страниц (RouteMeta)
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -11,7 +13,7 @@ const router = createRouter({
     {
       path: '/',
       component: () => import('@/layouts/UnauthorizeLayout.vue'),
-      meta: { guest: true },
+      meta: { middleware: [guestMiddleware] },
       children: [
         {
           path: 'login',
@@ -28,7 +30,7 @@ const router = createRouter({
     {
       path: '/',
       component: () => import('@/layouts/AuthLayout.vue'),
-      meta: { requiresAuth: true },
+      meta: { middleware: [authMiddleware] },
       children: [
         {
           path: 'orders',
@@ -67,16 +69,18 @@ const router = createRouter({
           meta: { title: 'Наблюдение', showBack: true, hideNav: true, fullBleed: true, showChat: true },
         },
         {
+          // Поиск заказов доступен только исполнителю.
           path: 'search',
           name: 'search',
           component: () => import('@/views/search/SearchView.vue'),
-          meta: { title: 'Поиск', nav: 'search' },
+          meta: { title: 'Поиск', nav: 'search', middleware: [roleMiddleware('executor')] },
         },
         {
+          // Отклики по заказам доступны только исполнителю.
           path: 'responses',
           name: 'responses',
           component: () => import('@/views/responses/ResponsesView.vue'),
-          meta: { title: 'Отклики', nav: 'responses' },
+          meta: { title: 'Отклики', nav: 'responses', middleware: [roleMiddleware('executor')] },
         },
         {
           path: 'profile',
@@ -101,16 +105,19 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach(async (to) => {
-  const { isAuthenticated, bootstrap } = useAuth()
+router.beforeEach(async (to, from) => {
+  // Профиль пользователя нужен и auth-, и ролевым middleware.
+  const { bootstrap } = useAuth()
   await bootstrap()
 
-  if (to.matched.some((record) => record.meta.requiresAuth) && !isAuthenticated.value) {
-    return { name: 'login', query: { redirect: to.fullPath } }
-  }
+  const chain = to.matched.flatMap((record) => record.meta.middleware ?? [])
 
-  if (to.matched.some((record) => record.meta.guest) && isAuthenticated.value) {
-    return { name: 'orders' }
+  for (const middleware of chain) {
+    const result = await middleware({ to, from })
+
+    if (result !== true) {
+      return result
+    }
   }
 
   return true

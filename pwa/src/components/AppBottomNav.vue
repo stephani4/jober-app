@@ -4,12 +4,20 @@ import { RouterLink, useRoute } from 'vue-router'
 import BottomNavIcon from '@/components/BottomNavIcon.vue'
 import NotificationBadge from '@/components/NotificationBadge.vue'
 import { bottomNavItems } from '@/config/bottomNav'
-import { useNotifications, useOrderTypes } from '@/composables'
+import { useAuth, useNotifications, useOrderTypes } from '@/composables'
 
 const route = useRoute()
+const { hasRole } = useAuth()
 const { unreadCount } = useNotifications()
 const { openPicker } = useOrderTypes()
-const activeKey = computed(() => route.meta.nav as string | undefined)
+const activeKey = computed(() => route.meta.nav)
+
+// Состав табов зависит от роли: у заказчика нет поиска и откликов.
+const items = computed(() => bottomNavItems.filter((item) => hasRole(item.roles)))
+/** Колонок столько, сколько доступных табов, — иначе они «жмутся» влево. */
+const gridStyle = computed(() => ({
+  gridTemplateColumns: `repeat(${items.value.length}, minmax(0, 1fr))`,
+}))
 
 function isActive(key: string): boolean {
   return activeKey.value === key
@@ -25,8 +33,8 @@ function isCreate(key: string): boolean {
     class="fixed bottom-0 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 overflow-hidden rounded-t-2xl border border-border-subtle bg-surface-page shadow-[var(--shadow-card)] pb-[env(safe-area-inset-bottom)] dark:border-white/10 dark:bg-zinc-900"
     aria-label="Основная навигация"
   >
-    <div class="grid h-16 grid-cols-5 items-center justify-items-stretch">
-      <template v-for="item in bottomNavItems" :key="item.key">
+    <div class="grid h-16 items-center justify-items-stretch" :style="gridStyle">
+      <template v-for="item in items" :key="item.key">
         <button
           v-if="isCreate(item.key)"
           type="button"

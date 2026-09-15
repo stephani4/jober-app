@@ -44,6 +44,10 @@ class OrderService
                     'lon' => $point['lon'],
                     'position' => $index + 1,
                     'cost' => 0,
+                    'entrance' => $point['entrance'] ?? null,
+                    'floor' => $point['floor'] ?? null,
+                    'apartment' => $point['apartment'] ?? null,
+                    'intercom' => $point['intercom'] ?? null,
                 ]);
             }
 
@@ -138,6 +142,11 @@ class OrderService
             'points.*.address' => ['nullable', 'string', 'max:500'],
             'points.*.lat' => ['required', 'numeric', 'between:-90,90'],
             'points.*.lon' => ['required', 'numeric', 'between:-180,180'],
+            // Данные доступа в здание заполняются только для выбранного здания и не обязательны.
+            'points.*.entrance' => ['nullable', 'integer', 'min:0', 'max:1000'],
+            'points.*.floor' => ['nullable', 'integer', 'min:0', 'max:1000'],
+            'points.*.apartment' => ['nullable', 'string', 'max:20'],
+            'points.*.intercom' => ['nullable', 'integer', 'min:0', 'max:999999'],
         ], [
             'order_type_id.required' => 'Выберите вид заказа.',
             'order_type_id.exists' => 'Выберите вид заказа.',

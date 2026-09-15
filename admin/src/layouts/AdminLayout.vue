@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRouter } from 'vue-router'
+import Button from 'primevue/button'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import { useAuth } from '@/composables'
 
@@ -45,13 +46,14 @@ async function onLogout(): Promise<void> {
       <div class="border-t border-white/10 px-4 py-4">
         <p class="truncate text-sm">{{ admin?.name }}</p>
         <p class="truncate text-xs text-white/50">{{ admin?.email }}</p>
-        <button
-          type="button"
-          class="mt-3 text-sm text-white/70 hover:text-white"
+        <Button
+          class="mt-3 !px-0 text-white/70 hover:!text-white"
+          variant="text"
+          severity="secondary"
+          size="small"
+          label="Выйти"
           @click="onLogout"
-        >
-          Выйти
-        </button>
+        />
       </div>
     </aside>
     <div class="flex min-w-0 flex-1 flex-col">

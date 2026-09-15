@@ -9,6 +9,7 @@ use App\Enums\UserRole;
 use App\Models\Admin;
 use App\Models\Order;
 use App\Models\OrderPoint;
+use App\Models\OrderType;
 use App\Models\User;
 use App\Services\Centrifugo\CentrifugoClient;
 use Database\Seeders\AdminPermissionSeeder;
@@ -75,6 +76,84 @@ class AdminOrderTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'items')
             ->assertJsonPath('items.0.id', $pending->id);
+    }
+
+    public function test_admin_lists_orders_paginated_by_15(): void
+    {
+        $admin = $this->makeAdmin();
+        $author = User::factory()->create(['role' => UserRole::Customer]);
+        // 16 заказов в статусе Wait: первая страница — 15, вторая — 1.
+        for ($i = 0; $i < 16; $i++) {
+            $this->orderFor($author, OrderStatus::Wait);
+        }
+
+        $first = $this->actingAs($admin, 'admin')
+            ->getJson('/api/admin/orders?'.http_build_query(['status' => 'wait']))
+            ->assertOk()
+            ->assertJsonCount(15, 'items');
+
+        $nextCursor = $first->json('next_cursor');
+        $this->assertNotNull($nextCursor);
+
+        $second = $this->actingAs($admin, 'admin')
+            ->getJson('/api/admin/orders?'.http_build_query(['status' => 'wait', 'cursor' => $nextCursor]))
+            ->assertOk()
+            ->assertJsonCount(1, 'items')
+            ->assertJsonPath('next_cursor', null);
+
+        $firstIds = collect($first->json('items'))->pluck('id');
+        $secondIds = collect($second->json('items'))->pluck('id');
+        $this->assertTrue($firstIds->merge($secondIds)->unique()->count() === 16);
+    }
+
+    public function test_admin_filters_orders_by_type_cost_and_number(): void
+    {
+        $admin = $this->makeAdmin();
+        $author = User::factory()->create(['role' => UserRole::Customer]);
+
+        $typeBuy = OrderType::query()->create(['name' => 'Купим и привезем', 'description' => 'Покупка и доставка']);
+        $typeHelp = OrderType::query()->create(['name' => 'Помощь в переносе', 'description' => 'Грузчики']);
+
+        $cheap = $this->orderFor($author, OrderStatus::Wait, ['order_type_id' => $typeBuy->id, 'cost' => 1000]);
+        $pricey = $this->orderFor($author, OrderStatus::Wait, ['order_type_id' => $typeHelp->id, 'cost' => 5000]);
+
+        $this->actingAs($admin, 'admin')
+            ->getJson('/api/admin/orders?'.http_build_query(['status' => 'wait', 'order_type_id' => $typeHelp->id]))
+            ->assertOk()
+            ->assertJsonCount(1, 'items')
+            ->assertJsonPath('items.0.id', $pricey->id);
+
+        $this->actingAs($admin, 'admin')
+            ->getJson('/api/admin/orders?'.http_build_query(['status' => 'wait', 'cost_min' => 3000]))
+            ->assertOk()
+            ->assertJsonCount(1, 'items')
+            ->assertJsonPath('items.0.id', $pricey->id);
+
+        $this->actingAs($admin, 'admin')
+            ->getJson('/api/admin/orders?'.http_build_query(['status' => 'wait', 'cost_max' => 2000]))
+            ->assertOk()
+            ->assertJsonCount(1, 'items')
+            ->assertJsonPath('items.0.id', $cheap->id);
+
+        $this->actingAs($admin, 'admin')
+            ->getJson('/api/admin/orders?'.http_build_query(['status' => 'wait', 'cost_min' => 1000, 'cost_max' => 2000]))
+            ->assertOk()
+            ->assertJsonCount(1, 'items')
+            ->assertJsonPath('items.0.id', $cheap->id);
+
+        $this->actingAs($admin, 'admin')
+            ->getJson('/api/admin/orders?'.http_build_query(['status' => 'wait', 'id' => $pricey->id]))
+            ->assertOk()
+            ->assertJsonCount(1, 'items')
+            ->assertJsonPath('items.0.id', $pricey->id);
+
+        $this->actingAs($admin, 'admin')
+            ->getJson('/api/admin/orders?'.http_build_query(['status' => 'wait', 'order_type_id' => 999]))
+            ->assertUnprocessable();
+
+        $this->actingAs($admin, 'admin')
+            ->getJson('/api/admin/orders?'.http_build_query(['status' => 'wait', 'cost_min' => -5]))
+            ->assertUnprocessable();
     }
 
     public function test_admin_approves_order_and_publishes_realtime(): void
@@ -149,11 +228,12 @@ class AdminOrderTest extends TestCase
         return $admin;
     }
 
-    private function orderFor(User $author, OrderStatus $status): Order
+    private function orderFor(User $author, OrderStatus $status, array $attributes = []): Order
     {
         $order = Order::factory()->for($author)->create([
             'description' => 'Документы',
             'status' => $status,
+            ...$attributes,
         ]);
         OrderPoint::factory()->for($order)->create([
             'position' => 1,

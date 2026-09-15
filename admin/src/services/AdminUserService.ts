@@ -6,7 +6,7 @@ export interface UserListFilters {
   name?: string
   email?: string
   birth_date?: string
-  role?: UserRole | ''
+  role?: UserRole
 }
 
 /**
@@ -19,7 +19,7 @@ export class AdminUserService {
         name: filters.name || undefined,
         email: filters.email || undefined,
         birth_date: filters.birth_date || undefined,
-        role: filters.role || undefined,
+        role: filters.role ?? undefined,
         cursor: cursor ?? undefined,
       },
     })

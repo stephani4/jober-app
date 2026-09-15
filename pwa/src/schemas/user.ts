@@ -2,6 +2,9 @@ import { z } from 'zod'
 
 export const userRoleSchema = z.enum(['customer', 'executor'])
 
+/** Все роли PWA: нужны для проверки ролей в middleware маршрутов и в UI. */
+export const userRoles = userRoleSchema.options
+
 export const userSchema = z.object({
   id: z.number().int().positive(),
   name: z.string().min(1),

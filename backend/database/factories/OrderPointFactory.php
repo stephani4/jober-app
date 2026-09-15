@@ -24,6 +24,10 @@ class OrderPointFactory extends Factory
             'lon' => fake()->longitude(),
             'position' => 1,
             'cost' => fake()->randomFloat(2, 100, 5000),
+            'entrance' => null,
+            'floor' => null,
+            'apartment' => null,
+            'intercom' => null,
         ];
     }
 }

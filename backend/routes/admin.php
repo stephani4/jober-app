@@ -3,6 +3,8 @@
 use App\Enums\AdminPermission;
 use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\AdminOrderController;
+use App\Http\Controllers\Api\Admin\AdminOrderTypeController;
+use App\Http\Controllers\Api\Admin\AdminUserController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->group(function () {
@@ -18,9 +20,14 @@ Route::prefix('admin')->group(function () {
     Route::middleware('auth:admin')->group(function () {
         Route::get('/orders', [AdminOrderController::class, 'index'])
             ->middleware('permission:'.AdminPermission::OrdersView->value.',admin');
+        Route::get('/order-types', [AdminOrderTypeController::class, 'index'])
+            ->middleware('permission:'.AdminPermission::OrdersView->value.',admin');
         Route::post('/orders/{order}/approve', [AdminOrderController::class, 'approve'])
             ->middleware('permission:'.AdminPermission::OrdersApprove->value.',admin');
         Route::post('/orders/{order}/cancel', [AdminOrderController::class, 'cancel'])
             ->middleware('permission:'.AdminPermission::OrdersCancel->value.',admin');
+
+        Route::get('/users', [AdminUserController::class, 'index'])
+            ->middleware('permission:'.AdminPermission::UsersView->value.',admin');
     });
 });
