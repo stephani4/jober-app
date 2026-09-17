@@ -583,6 +583,12 @@ class OrderExecutingService
 
     private function load(OrderExecuting $executing): OrderExecuting
     {
-        return $executing->load(['order.points', 'order.user', 'order.currentExecuting', 'points.orderPoint']);
+        return $executing->load([
+            'order.points',
+            'order.user',
+            'order.currentExecuting.executor.avatar',
+            'executor.avatar',
+            'points.orderPoint',
+        ]);
     }
 }

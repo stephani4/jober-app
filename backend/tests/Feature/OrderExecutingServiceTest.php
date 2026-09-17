@@ -5,10 +5,12 @@ namespace Tests\Feature;
 use App\Enums\OrderExecutingStatus;
 use App\Enums\OrderStatus;
 use App\Enums\UserRole;
+use App\Models\File;
 use App\Models\Order;
 use App\Models\OrderPoint;
 use App\Models\User;
 use App\Services\OrderExecutingService;
+use App\Services\OrderRpcService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -403,6 +405,28 @@ class OrderExecutingServiceTest extends TestCase
 
         $this->assertNull($service->active($executor));
         $this->assertNull($service->active($order->user));
+    }
+
+    public function test_watching_payload_includes_executor_profile(): void
+    {
+        [$executor, $order] = $this->executorAndOrder();
+        $file = File::create([
+            'name' => 'avatar.png',
+            'extension' => 'png',
+            'size' => 1234,
+            'path' => 'avatars/avatar.png',
+        ]);
+        $executor->update(['avatar_id' => $file->id]);
+
+        app(OrderExecutingService::class)->start($executor, ['order_id' => $order->id]);
+
+        $payload = app(OrderRpcService::class)->watching($order->user, ['order_id' => $order->id]);
+
+        $this->assertSame($executor->id, $payload['executor']['id']);
+        $this->assertSame($executor->name, $payload['executor']['name']);
+        $this->assertSame($file->id, $payload['executor']['avatar_id']);
+        $this->assertSame('/api/files/'.$file->id, $payload['executor']['avatar_url']);
+        $this->assertSame($executor->id, $payload['order']['executor']['id']);
     }
 
     /**

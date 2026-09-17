@@ -26,6 +26,7 @@ class UserProfileRpcService
             'working_area_id' => 'nullable|exists:working_areas,id',
             'name' => 'sometimes|string|max:255',
             'birth_date' => 'sometimes|date',
+            'avatar_id' => 'sometimes|nullable|integer|exists:files,id',
         ]);
 
         if ($validator->fails()) {
@@ -33,6 +34,7 @@ class UserProfileRpcService
         }
 
         $user->update($validator->validated());
+        $user->loadMissing('avatar');
 
         return [
             'id' => $user->id,
@@ -40,6 +42,8 @@ class UserProfileRpcService
             'email' => $user->email,
             'working_area_id' => $user->working_area_id,
             'birth_date' => $user->birth_date?->toDateString(),
+            'avatar_id' => $user->avatar_id,
+            'avatar_url' => $user->avatar?->url(),
         ];
     }
 }

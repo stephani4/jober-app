@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\OrderExecutingStatus;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -37,6 +38,8 @@ class OrderResource extends JsonResource
                 'email' => $this->user->email,
                 'role' => $this->user->role?->value,
             ]),
+            // Исполнитель, принявший заказ в работу.
+            'executor' => $this->whenLoaded('currentExecuting', fn () => $this->assignedExecutor($request)),
             'points' => $this->whenLoaded('points', fn () => $this->points->map(fn ($point) => [
                 'id' => $point->id,
                 'description' => $point->description,
@@ -51,5 +54,23 @@ class OrderResource extends JsonResource
                 'intercom' => $point->intercom !== null ? (int) $point->intercom : null,
             ])->values()->all()),
         ];
+    }
+
+    /**
+     * Исполнитель текущего назначения: null, если заказ ещё не взят в работу.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function assignedExecutor(Request $request): ?array
+    {
+        $executing = $this->currentExecuting;
+        $executor = $executing?->executor;
+
+        // Отменённое выполнение (отказ исполнителя или отмена заказа) исполнителя не показывает.
+        if (! $executor || $executing->status === OrderExecutingStatus::Cancel) {
+            return null;
+        }
+
+        return OrderExecutorResource::make($executor)->resolve($request);
     }
 }

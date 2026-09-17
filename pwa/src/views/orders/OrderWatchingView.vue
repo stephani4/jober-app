@@ -78,6 +78,7 @@ const pointAccess = computed(() => currentPoint.value?.order_point ?? null)
         :awaiting-confirmation="awaitingConfirmation"
         :confirmation-number="confirmationNumber"
         :error="error || routeError"
+        :executor="executing.executor ?? null"
       />
     </template>
     <OrderChatDriver :order-id="orderId" />

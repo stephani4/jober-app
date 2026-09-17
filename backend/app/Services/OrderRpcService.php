@@ -347,7 +347,7 @@ class OrderRpcService
             return;
         }
 
-        $order->loadMissing(['points', 'user', 'currentExecuting']);
+        $order->loadMissing(['points', 'user', 'currentExecuting.executor.avatar']);
         $author = $order->user;
         if (! $author) {
             return;

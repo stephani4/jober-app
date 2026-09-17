@@ -19,14 +19,23 @@ class OrderService
 {
     public const HISTORY_PAGE_SIZE = 15;
 
+    /** Шаблон «широта, долгота»: так выглядел адрес, сохранённый без обратного геокодирования. */
+    private const COORDS_PATTERN = '/^-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?$/';
+
+    public function __construct(
+        private readonly VkMapsGeocodingService $geocoder,
+    ) {
+    }
+
     /**
      * @param  array<string, mixed>  $data
      */
     public function create(User $user, array $data): Order
     {
         $payload = $this->validateCreate($data);
+        $points = $this->resolvePointAddresses($payload['points']);
 
-        return DB::transaction(function () use ($user, $payload) {
+        return DB::transaction(function () use ($user, $payload, $points) {
             $order = Order::query()->create([
                 'user_id' => $user->id,
                 'order_type_id' => $payload['order_type_id'],
@@ -36,7 +45,7 @@ class OrderService
                 'reason' => null,
             ]);
 
-            foreach (array_values($payload['points']) as $index => $point) {
+            foreach (array_values($points) as $index => $point) {
                 $order->points()->create([
                     'description' => $point['description'],
                     'address' => $point['address'] ?? null,
@@ -56,6 +65,29 @@ class OrderService
     }
 
     /**
+     * Точки без адреса (или с координатами вместо адреса) дополняем адресом через
+     * обратное геокодирование VK Maps. Если адрес найти не удалось — оставляем null:
+     * координаты в поле address не сохраняем.
+     *
+     * @param  list<array<string, mixed>>  $points
+     * @return list<array<string, mixed>>
+     */
+    private function resolvePointAddresses(array $points): array
+    {
+        foreach ($points as $index => $point) {
+            $address = trim((string) ($point['address'] ?? ''));
+            if ($address !== '' && preg_match(self::COORDS_PATTERN, $address) !== 1) {
+                continue;
+            }
+
+            $resolved = $this->geocoder->reverseGeocode((float) $point['lat'], (float) $point['lon']);
+            $points[$index]['address'] = $resolved !== null ? mb_substr($resolved, 0, 500) : null;
+        }
+
+        return $points;
+    }
+
+    /**
      * Заказы автора: на модерации, в ожидании и в работе.
      *
      * @return Collection<int, Order>
@@ -63,7 +95,7 @@ class OrderService
     public function listMine(User $user): Collection
     {
         return Order::query()
-            ->with(['points', 'user', 'currentExecuting', 'orderType'])
+            ->with(['points', 'user', 'currentExecuting.executor.avatar', 'orderType'])
             ->where('user_id', $user->id)
             ->whereIn('status', [
                 OrderStatus::Moderate,
@@ -86,7 +118,7 @@ class OrderService
         $limit = self::HISTORY_PAGE_SIZE;
 
         $query = Order::query()
-            ->with(['points', 'user', 'currentExecuting', 'orderType'])
+            ->with(['points', 'user', 'currentExecuting.executor.avatar', 'orderType'])
             ->where('user_id', $user->id)
             ->whereIn('status', [
                 OrderStatus::Complete,
@@ -116,7 +148,7 @@ class OrderService
     public function listFeed(): Collection
     {
         return Order::query()
-            ->with(['points', 'user', 'currentExecuting', 'orderType'])
+            ->with(['points', 'user', 'currentExecuting.executor.avatar', 'orderType'])
             ->where('status', OrderStatus::Wait)
             ->latest()
             ->limit(50)

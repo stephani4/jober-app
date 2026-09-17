@@ -50,7 +50,7 @@ function pointLabel(point: DraftOrderPoint): string {
     return point.address
   }
   if (point.lat != null && point.lon != null) {
-    return `${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}`
+    return 'Адрес не определён'
   }
   return props.singlePoint ? 'Адрес доставки не выбран' : 'Точка не выбрана'
 }

@@ -37,6 +37,8 @@ const BUILDING_QUERY_TOLERANCE = 6
 
 /** Ошибка выбора точки: клик мимо здания. */
 const mapError = ref('')
+/** Предупреждение: точку выбрали, но адрес дома определить не удалось. */
+const addressNotice = ref('')
 
 function hasSelectedPoint(): boolean {
   return props.lon != null && props.lat != null
@@ -139,11 +141,16 @@ async function onMapClick(event: {
     return
   }
   mapError.value = ''
+  addressNotice.value = ''
   const lon = event.lngLat.lng
   const lat = event.lngLat.lat
   placeMarker([lon, lat])
   const address = await vkMapsGeocodingService.reverseGeocode(lat, lon)
-  query.value = address ?? ''
+  if (address) {
+    query.value = address
+  }
+  // Координаты в поле адреса не подставляем: без адреса точка сохраняется только по геометрии.
+  addressNotice.value = address ? '' : 'Не удалось определить адрес дома, точку сохраним по координатам.'
   emit('select', { lat, lon, address })
 }
 
@@ -153,6 +160,7 @@ async function onPickSuggestion(item: VkMapsSuggestItem): Promise<void> {
     return
   }
   mapError.value = ''
+  addressNotice.value = ''
   applyPlace(place.lat, place.lon, place.address, true)
 }
 
@@ -296,6 +304,9 @@ onBeforeUnmount(() => {
       <p v-if="error" class="mt-2 text-sm text-rose-300">{{ error }}</p>
       <p v-if="mapError" class="mt-2 rounded-xl bg-rose-500/15 px-3 py-2 text-sm text-rose-200">
         {{ mapError }}
+      </p>
+      <p v-if="addressNotice" class="mt-2 rounded-xl bg-amber-500/15 px-3 py-2 text-sm text-amber-100">
+        {{ addressNotice }}
       </p>
       <p class="mt-2 text-xs text-text-on-hero-muted">
         Выбирать можно только здания: нажмите на дом или найдите адрес в поиске.

@@ -24,6 +24,8 @@ import {
   type OrderStatusEvent,
 } from '@/schemas/order'
 import { orderMessageEventSchema, orderMessageSchema, type OrderMessage, type OrderMessageEvent } from '@/schemas/orderMessage'
+import { profileSchema, type Profile, type ProfileUpdatePayload } from '@/schemas/user'
+import { workingAreaOptionListSchema, type WorkingAreaOption } from '@/schemas/workingArea'
 import { centrifugoClient } from '@/services/CentrifugoClient'
 
 /**
@@ -245,14 +247,16 @@ export class RealtimeService {
     return notificationUnreadCountSchema.parse(data).unread_count
   }
 
-  async listWorkingAreas(): Promise<any[]> {
+  async listWorkingAreas(): Promise<WorkingAreaOption[]> {
     const data = await centrifugoClient.rpc<unknown>('profile:areas')
-    return Array.isArray(data) ? data : []
+    const parsed = workingAreaOptionListSchema.safeParse(Array.isArray(data) ? data : [])
+
+    return parsed.success ? parsed.data : []
   }
 
-  async updateProfile(payload: unknown): Promise<any> {
+  async updateProfile(payload: ProfileUpdatePayload): Promise<Profile> {
     const data = await centrifugoClient.rpc<unknown>('profile:update', payload)
-    return data
+    return profileSchema.parse(data)
   }
 }
 

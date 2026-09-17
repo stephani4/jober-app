@@ -2,11 +2,12 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import NotificationBadge from '@/components/NotificationBadge.vue'
-import { useAuth, useNotifications, useOrderChat, useOrderDecline } from '@/composables'
+import { useAuth, useNotifications, useOrderChat, useOrderDecline, useOrders } from '@/composables'
 
 const route = useRoute()
 const router = useRouter()
 const { user, hasRole } = useAuth()
+const { availableExecutorsCount } = useOrders()
 const { unreadCount } = useNotifications()
 const { open: chatOpen, unreadCount: chatUnread, showChat, toggle: toggleChat, close: closeChat } = useOrderChat()
 const decline = useOrderDecline()
@@ -29,6 +30,9 @@ const chatOnLeft = computed(() => route.name === 'order-execute')
 const showDecline = computed(() => route.name === 'order-execute')
 
 const canSearch = computed(() => hasRole(['executor']))
+
+/** Счётчик свободных исполнителей виден только заказчику: исполнителю место занимает «Найти заказ». */
+const showAvailableExecutors = computed(() => hasRole(['customer']))
 
 const showBack = computed(() => Boolean(route.meta.showBack))
 
@@ -77,11 +81,12 @@ function goToProfile(): void {
     <div class="flex items-center justify-between gap-3">
       <button
         type="button"
-        class="flex h-11 w-11 items-center justify-center rounded-full border border-border-hero-control bg-white/10 text-sm text-text-on-hero transition hover:bg-white/15"
+        class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-border-hero-control bg-white/10 text-sm text-text-on-hero transition hover:bg-white/15"
         aria-label="Профиль"
         @click="goToProfile"
       >
-        {{ user?.name?.charAt(0)?.toUpperCase() ?? '?' }}
+        <img v-if="user?.avatar_url" :src="user.avatar_url" alt="" class="h-full w-full object-cover" />
+        <template v-else>{{ user?.name?.charAt(0)?.toUpperCase() ?? '?' }}</template>
       </button>
       <h1 class="sr-only">{{ title }}</h1>
       <button
@@ -165,6 +170,38 @@ function goToProfile(): void {
         </span>
         <span class="truncate text-sm font-semibold text-black">Найти заказ</span>
       </button>
+      <div
+        v-else-if="showAvailableExecutors"
+        class="flex min-w-0 items-center gap-2 rounded-2xl bg-white px-3 py-3 shadow-[var(--shadow-card)]"
+        aria-label="Свободные исполнители, ожидающие заказ"
+      >
+        <span
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-nav text-white"
+          aria-hidden="true"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            class="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="10" cy="8" r="3.2" />
+            <path d="M4 19v-1.5A3.5 3.5 0 0 1 7.5 14h5a3.5 3.5 0 0 1 3.5 3.5V19" />
+            <path d="M16 5.5a3.2 3.2 0 0 1 0 5M17.5 14h1A3.5 3.5 0 0 1 22 17.5V19" />
+          </svg>
+        </span>
+        <span class="min-w-0">
+          <span class="block text-lg font-semibold leading-none text-black">
+            {{ availableExecutorsCount }}
+          </span>
+          <span class="mt-1 block truncate text-[10px] leading-none text-text-secondary">
+            Ждут заказ
+          </span>
+        </span>
+      </div>
     </div>
   </header>
 

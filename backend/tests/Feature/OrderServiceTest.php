@@ -4,13 +4,16 @@ namespace Tests\Feature;
 
 use App\Enums\OrderStatus;
 use App\Enums\UserRole;
+use App\Models\File;
 use App\Models\Order;
 use App\Models\OrderPoint;
 use App\Models\OrderType;
 use App\Models\User;
 use App\Services\OrderExecutingService;
+use App\Services\OrderRpcService;
 use App\Services\OrderService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
@@ -225,6 +228,165 @@ class OrderServiceTest extends TestCase
         $this->assertTrue($secondPage['items']->every(
             fn ($order) => in_array($order->status, [OrderStatus::Complete, OrderStatus::Cancel], true),
         ));
+    }
+
+    public function test_create_order_resolves_point_address_via_reverse_geocoding(): void
+    {
+        Http::fake([
+            'maps.vk.com/api/search*' => Http::response([
+                'results' => [
+                    [
+                        'name' => 'ЖК Весенний',
+                        'address' => 'Кемеровская область, Кемерово, улица Весенняя, 1',
+                        'type' => 'building',
+                        'pin' => [86.08931, 55.35451],
+                        'address_details' => [
+                            'locality' => 'Кемерово',
+                            'street' => 'улица Весенняя',
+                            'building' => '1',
+                        ],
+                    ],
+                ],
+            ]),
+        ]);
+        $user = User::factory()->create();
+
+        $order = app(OrderService::class)->create($user, [
+            'order_type_id' => OrderType::ERRAND,
+            'cost' => 500,
+            'points' => [[
+                'description' => 'Забрать документы',
+                'lat' => 55.35451,
+                'lon' => 86.08931,
+            ]],
+        ]);
+
+        $this->assertSame('Кемерово, улица Весенняя, 1', $order->points[0]->address);
+    }
+
+    public function test_create_order_replaces_coordinate_like_address_with_geocoded_one(): void
+    {
+        Http::fake([
+            'maps.vk.com/api/search*' => Http::response([
+                'results' => [
+                    [
+                        'address' => 'Кемеровская область, Кемерово, улица Весенняя, 1',
+                        'type' => 'building',
+                        'pin' => [86.08931, 55.35451],
+                        'address_details' => [
+                            'locality' => 'Кемерово',
+                            'street' => 'улица Весенняя',
+                            'building' => '1',
+                        ],
+                    ],
+                ],
+            ]),
+        ]);
+        $user = User::factory()->create();
+
+        $order = app(OrderService::class)->create($user, [
+            'order_type_id' => OrderType::ERRAND,
+            'cost' => 500,
+            'points' => [[
+                'description' => 'Забрать документы',
+                'address' => '55.35451, 86.08931',
+                'lat' => 55.35451,
+                'lon' => 86.08931,
+            ]],
+        ]);
+
+        $this->assertSame('Кемерово, улица Весенняя, 1', $order->points[0]->address);
+    }
+
+    public function test_create_order_keeps_address_null_when_geocoding_has_no_match(): void
+    {
+        // Ближайший объект — улица в соседнем квартале: в радиус 150 м не попадает.
+        Http::fake([
+            'maps.vk.com/api/search*' => Http::response([
+                'results' => [
+                    [
+                        'address' => 'Кемеровская область, Кемерово, улица Весенняя',
+                        'type' => 'street',
+                        'pin' => [86.0793, 55.3545],
+                    ],
+                ],
+            ]),
+        ]);
+        $user = User::factory()->create();
+
+        $order = app(OrderService::class)->create($user, [
+            'order_type_id' => OrderType::ERRAND,
+            'cost' => 500,
+            'points' => [[
+                'description' => 'Забрать документы',
+                'lat' => 55.35451,
+                'lon' => 86.08931,
+            ]],
+        ]);
+
+        $this->assertNull($order->points[0]->address);
+        Http::assertSentCount(1);
+    }
+
+    public function test_create_order_does_not_geocode_when_address_provided(): void
+    {
+        Http::fake();
+        $user = User::factory()->create();
+
+        $order = app(OrderService::class)->create($user, [
+            'order_type_id' => OrderType::ERRAND,
+            'cost' => 500,
+            'points' => [[
+                'description' => 'Забрать документы',
+                'address' => 'Кемерово, Весенняя 1',
+                'lat' => 55.35451,
+                'lon' => 86.08931,
+            ]],
+        ]);
+
+        $this->assertSame('Кемерово, Весенняя 1', $order->points[0]->address);
+        Http::assertNothingSent();
+    }
+
+    public function test_mine_includes_executor_profile_after_taken(): void
+    {
+        $author = User::factory()->create();
+        $order = $this->orderFor($author, 'Доставка посылки');
+        $executor = User::factory()->create(['role' => UserRole::Executor]);
+        $file = File::create([
+            'name' => 'avatar.png',
+            'extension' => 'png',
+            'size' => 1234,
+            'path' => 'avatars/avatar.png',
+        ]);
+        $executor->update(['avatar_id' => $file->id]);
+
+        app(OrderExecutingService::class)->start($executor, ['order_id' => $order->id]);
+
+        $items = app(OrderRpcService::class)->mine($author);
+        $found = collect($items)->firstWhere('id', $order->id);
+
+        $this->assertNotNull($found);
+        $this->assertSame($executor->name, $found['executor']['name']);
+        $this->assertSame($file->id, $found['executor']['avatar_id']);
+        $this->assertSame('/api/files/'.$file->id, $found['executor']['avatar_url']);
+    }
+
+    public function test_mine_hides_executor_after_decline(): void
+    {
+        $author = User::factory()->create();
+        $order = $this->orderFor($author, 'Доставка посылки');
+        $executor = User::factory()->create(['role' => UserRole::Executor]);
+        $service = app(OrderExecutingService::class);
+
+        $service->start($executor, ['order_id' => $order->id]);
+        $service->decline($executor, ['order_id' => $order->id]);
+
+        $items = app(OrderRpcService::class)->mine($author);
+        $found = collect($items)->firstWhere('id', $order->id);
+
+        $this->assertNotNull($found);
+        $this->assertNull($found['executor']);
     }
 
     private function orderFor(User $author, string $description, OrderStatus $status = OrderStatus::Wait): Order

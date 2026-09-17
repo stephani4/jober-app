@@ -38,6 +38,14 @@ return [
             'report' => false,
         ],
 
+        // Загруженные пользователями файлы отдаются через API (GET /api/files/{file}).
+        'uploads' => [
+            'driver' => 'local',
+            'root' => storage_path('app/uploads'),
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

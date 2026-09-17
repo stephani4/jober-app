@@ -5,11 +5,21 @@ export type VkMapsLatLon = {
   lon: number
 }
 
+export type VkMapsAddressDetails = {
+  /** Город/населённый пункт. */
+  locality?: string
+  /** Улица. */
+  street?: string
+  /** Номер дома. */
+  building?: string
+}
+
 export type VkMapsSuggestItem = {
   name: string | null
   address: string | null
   type: string | null
   pin: VkMapsLatLon | null
+  details: VkMapsAddressDetails | null
 }
 
 export type VkMapsSearchOptions = {
@@ -61,15 +71,17 @@ type ApiResultItem = {
   address?: string
   type?: string
   pin?: unknown
+  address_details?: VkMapsAddressDetails
 }
 
 type ResultsResponse = {
   results?: ApiResultItem[]
 }
 
-type ReverseGeocodeResponse = {
-  result?: { name?: string; address?: string }
-}
+/** Сколько ближайших объектов запрашиваем при обратном геокодировании. */
+const REVERSE_SEARCH_LIMIT = 10
+/** Поля выдачи `/search`: `address_details` — части адреса, `pin` — координаты найденного объекта. */
+const REVERSE_SEARCH_FIELDS = 'name,address,type,pin,address_details'
 
 /**
  * Поиск и геокодирование через VK Maps: Suggest, Places, Search и обратное геокодирование.
@@ -115,28 +127,83 @@ export class VkMapsGeocodingService {
   }
 
   /**
+   * Радиус, в котором найденный адрес считаем адресом самой точки (метры):
+   * дальше начинается соседний квартал, такой адрес сохранять нельзя.
+   */
+  private static readonly MATCH_RADIUS_METERS = 150
+
+  /**
    * Адрес по координатам выбранной на карте точки.
+   *
+   * У VK Maps нет отдельного reverse-метода: обратное геокодирование — это поиск
+   * (`/search`) со строкой `q=lat,lon`, который возвращает ближайшие объекты с готовым
+   * адресом (`address_details`) и своими координатами (`pin`).
+   *
+   * Возвращаем `null`, если рядом адреса нет: координаты вместо адреса не подставляем.
    */
   async reverseGeocode(lat: number, lon: number, signal?: AbortSignal): Promise<string | null> {
-    const fallback = `${lat.toFixed(6)}, ${lon.toFixed(6)}`
-    try {
-      const params = new URLSearchParams({
-        api_key: vkMapsApiKey(),
-        lat: String(lat),
-        lon: String(lon),
-      })
-      const response = await fetch(`${vkMapsApiOrigin}/geocode?${params}`, { signal })
-      if (!response.ok) {
-        return fallback
-      }
-      const json = (await response.json()) as ReverseGeocodeResponse
-      return json.result?.address || json.result?.name || fallback
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        throw error
-      }
-      return fallback
+    const results = await this.fetchResults('search', `${lat},${lon}`, {
+      signal,
+      limit: REVERSE_SEARCH_LIMIT,
+      fields: REVERSE_SEARCH_FIELDS,
+    })
+
+    const match = this.nearestMatch(results, lat, lon)
+
+    return match === null ? null : this.formatAddress(match)
+  }
+
+  /**
+   * Ближайший к точке объект с адресом; здания (дома с номером) предпочтительнее.
+   */
+  private nearestMatch(items: VkMapsSuggestItem[], lat: number, lon: number): VkMapsSuggestItem | null {
+    const candidates = items
+      .filter(
+        (item): item is VkMapsSuggestItem & { address: string; pin: VkMapsLatLon } =>
+          Boolean(item.address && item.pin),
+      )
+      .map((item) => ({
+        item,
+        distance: this.distanceMeters(lat, lon, item.pin.lat, item.pin.lon),
+      }))
+      .filter((candidate) => candidate.distance <= VkMapsGeocodingService.MATCH_RADIUS_METERS)
+
+    if (candidates.length === 0) {
+      return null
     }
+
+    candidates.sort((a, b) => {
+      const aBuilding = a.item.type === 'building' ? 0 : 1
+      const bBuilding = b.item.type === 'building' ? 0 : 1
+
+      return aBuilding - bBuilding || a.distance - b.distance
+    })
+
+    return candidates[0].item
+  }
+
+  /**
+   * Компактный адрес «город, улица, дом»: полная строка API дублирует регион и район.
+   */
+  private formatAddress(item: VkMapsSuggestItem): string | null {
+    const parts = [item.details?.locality, item.details?.street, item.details?.building]
+      .map((part) => part?.trim())
+      .filter((part): part is string => Boolean(part))
+
+    return parts.length > 0 ? parts.join(', ') : item.address
+  }
+
+  /** Расстояние между координатами по формуле гаверсинуса, метры. */
+  private distanceMeters(latA: number, lonA: number, latB: number, lonB: number): number {
+    const earthRadiusMeters = 6371000
+    const toRadians = (degrees: number) => (degrees * Math.PI) / 180
+    const deltaLat = toRadians(latB - latA)
+    const deltaLon = toRadians(lonB - lonA)
+    const a =
+      Math.sin(deltaLat / 2) ** 2 +
+      Math.cos(toRadians(latA)) * Math.cos(toRadians(latB)) * Math.sin(deltaLon / 2) ** 2
+
+    return 2 * earthRadiusMeters * Math.asin(Math.sqrt(a))
   }
 
   /**
@@ -187,14 +254,14 @@ export class VkMapsGeocodingService {
   private async fetchResults(
     endpoint: 'suggest' | 'places' | 'search',
     query: string,
-    options?: { location?: VkMapsLatLon | null; signal?: AbortSignal; limit?: number },
+    options?: { location?: VkMapsLatLon | null; signal?: AbortSignal; limit?: number; fields?: string },
   ): Promise<VkMapsSuggestItem[]> {
     const params = new URLSearchParams({
       api_key: vkMapsApiKey(),
       q: query,
       lang: 'ru',
       limit: String(options?.limit ?? 8),
-      fields: 'name,address,type,pin',
+      fields: options?.fields ?? 'name,address,type,pin',
     })
     const location = this.formatLocation(options?.location)
     if (location) {
@@ -226,6 +293,7 @@ export class VkMapsGeocodingService {
       address: item.address?.trim() || null,
       type: item.type ?? null,
       pin: this.parsePin(item.pin),
+      details: item.address_details ?? null,
     }
   }
 

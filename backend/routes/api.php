@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\OrderMessageController;
 use App\Http\Controllers\Api\OrderTypeController;
 use App\Http\Controllers\Api\PushSubscriptionController;
@@ -26,9 +27,14 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// Содержимое файлов отдаётся публично: браузер не передаёт Authorization в <img src>.
+Route::get('/files/{file}', [FileController::class, 'show']);
+
 Route::middleware('auth:api')->group(function () {
     Route::get('/realtime/token', RealtimeTokenController::class);
     Route::get('/order-types', [OrderTypeController::class, 'index']);
+    // Изображение аватара загружается сразу после выбора; id связывается с users.avatar_id при сохранении профиля.
+    Route::post('/uploads/avatar', [FileController::class, 'storeAvatar']);
     Route::get('/push/vapid', [PushSubscriptionController::class, 'vapid']);
     Route::post('/push/subscriptions', [PushSubscriptionController::class, 'store']);
     Route::delete('/push/subscriptions', [PushSubscriptionController::class, 'destroy']);

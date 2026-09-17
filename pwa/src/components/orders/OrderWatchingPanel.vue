@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import OrderExecutorBadge from '@/components/orders/OrderExecutorBadge.vue'
 import PointAccessDetails from '@/components/orders/PointAccessDetails.vue'
+import type { OrderExecutor } from '@/schemas/order'
 
 defineProps<{
   stepLabel: string
@@ -17,6 +19,8 @@ defineProps<{
   awaitingConfirmation?: boolean
   /** Код подтверждения; показывается только автору на этапе confirmation. */
   confirmationNumber?: string | null
+  /** Исполнитель, за выполнением которого наблюдает автор. */
+  executor?: OrderExecutor | null
 }>()
 </script>
 
@@ -24,6 +28,13 @@ defineProps<{
   <section
     class="rounded-t-3xl border border-border-subtle bg-surface-card px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 shadow-[var(--shadow-card)] dark:border-white/10 dark:bg-zinc-900"
   >
+    <!-- Кто выполняет заказ: аватар и имя исполнителя. -->
+    <OrderExecutorBadge
+      v-if="executor"
+      :executor="executor"
+      label="Исполнитель"
+      class="mb-3 border-b border-border-subtle pb-3 dark:border-white/10"
+    />
     <p class="text-sm text-text-secondary">{{ stepLabel }}</p>
     <p class="mt-1 text-base text-text-primary dark:text-zinc-100">
       {{ description }}

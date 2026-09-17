@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
@@ -20,6 +21,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
     'role',
     'personal_data_consent_at',
     'working_area_id',
+    'avatar_id',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements JWTSubject
@@ -56,6 +58,14 @@ class User extends Authenticatable implements JWTSubject
     public function workingArea()
     {
         return $this->belongsTo(WorkingArea::class);
+    }
+
+    /**
+     * Файл аватара пользователя.
+     */
+    public function avatar(): BelongsTo
+    {
+        return $this->belongsTo(File::class, 'avatar_id');
     }
 
     /**

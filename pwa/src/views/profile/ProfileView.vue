@@ -80,7 +80,17 @@ async function onLogout(): Promise<void> {
   <section class="space-y-4 pb-10">
     <!-- Блок пользователя: аватар в акцентном кольце, имя в две строки, "Вы в системе" -->
     <div class="flex items-center gap-4">
-      <div class="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-surface-muted text-2xl font-semibold text-text-primary ring-4 ring-accent-nav/50 dark:bg-zinc-800 dark:text-zinc-100" aria-hidden="true">
+      <img
+        v-if="user?.avatar_url"
+        :src="user.avatar_url"
+        :alt="user?.name ?? 'Аватар'"
+        class="h-20 w-20 shrink-0 rounded-full object-cover ring-4 ring-accent-nav/50"
+      />
+      <div
+        v-else
+        class="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-surface-muted text-2xl font-semibold text-text-primary ring-4 ring-accent-nav/50 dark:bg-zinc-800 dark:text-zinc-100"
+        aria-hidden="true"
+      >
         {{ user?.name?.charAt(0)?.toUpperCase() ?? '?' }}
       </div>
       <div class="min-w-0 flex-1">

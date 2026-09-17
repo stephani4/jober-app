@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import OrderExecutorBadge from '@/components/orders/OrderExecutorBadge.vue'
 import type { Order } from '@/schemas/order'
 
 const props = defineProps<{
@@ -84,6 +85,14 @@ const routeLabel = computed(() => {
       <span aria-hidden="true">📍</span>
       <span class="truncate">{{ routeLabel }}</span>
     </p>
+
+    <!-- Исполнитель, выполняющий заказ. -->
+    <div
+      v-if="order.executor"
+      class="mt-3 rounded-xl border border-border-subtle bg-surface-muted/60 px-3 py-2 dark:border-white/10 dark:bg-zinc-800/60"
+    >
+      <OrderExecutorBadge :executor="order.executor" label="Исполнитель" />
+    </div>
 
     <!-- Этап подтверждения: автору показываем код, который нужно передать исполнителю. -->
     <p

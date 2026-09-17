@@ -48,7 +48,13 @@ const router = createRouter({
           path: 'orders/execute/:orderId',
           name: 'order-execute',
           component: () => import('@/views/orders/OrderExecuteView.vue'),
-          meta: { title: 'Выполнение', hideNav: true, fullBleed: true, showChat: true },
+          meta: {
+            title: 'Выполнение',
+            hideNav: true,
+            fullBleed: true,
+            showChat: true,
+            middleware: [roleMiddleware('executor')],
+          },
         },
         {
           path: 'orders/history',

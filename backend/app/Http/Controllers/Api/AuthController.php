@@ -44,6 +44,8 @@ class AuthController extends Controller
                 'role' => $payload['user']->role?->value,
                 'birth_date' => $payload['user']->birth_date?->toDateString(),
                 'working_area_id' => $payload['user']->working_area_id,
+                'avatar_id' => $payload['user']->avatar_id,
+                'avatar_url' => $payload['user']->avatar?->url(),
             ],
         ]);
     }
@@ -59,6 +61,8 @@ class AuthController extends Controller
             'role' => $user?->role?->value,
             'birth_date' => $user?->birth_date?->toDateString(),
             'working_area_id' => $user?->working_area_id,
+            'avatar_id' => $user?->avatar_id,
+            'avatar_url' => $user?->avatar?->url(),
             'created_at' => $user?->created_at?->toISOString(),
         ]);
     }

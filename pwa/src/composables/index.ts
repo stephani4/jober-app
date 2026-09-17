@@ -1,4 +1,5 @@
 export { useAuth } from '@/composables/useAuth'
+export { useAvatarUpload } from '@/composables/useAvatarUpload'
 export { useTheme } from '@/composables/useTheme'
 export { useLoginForm } from '@/composables/useLoginForm'
 export { useRegisterForm } from '@/composables/useRegisterForm'

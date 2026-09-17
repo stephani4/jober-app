@@ -2,17 +2,23 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { CustomDatepicker } from '@/components/CustomDatepicker'
+import AvatarPicker from '@/components/profile/AvatarPicker.vue'
 import { useAuth } from '@/composables'
 import { realtimeService } from '@/services/RealtimeService'
-import type { WorkingArea } from '@/services/WorkingAreaService'
+import type { ProfileUpdatePayload } from '@/schemas/user'
+import type { WorkingAreaOption } from '@/schemas/workingArea'
 
 const router = useRouter()
 const { user } = useAuth()
 
-const areas = ref<WorkingArea[]>([])
+const areas = ref<WorkingAreaOption[]>([])
 const loading = ref(false)
 const busy = ref(false)
 const error = ref('')
+
+// Аватар: id файла уйдёт в users.avatar_id, url нужен только для превью.
+const avatarId = ref<number | null>(null)
+const avatarUrl = ref<string | null>(null)
 
 const form = ref({
   working_area_id: null as number | null,
@@ -33,6 +39,8 @@ onMounted(async () => {
     form.value.name = user.value.name || ''
     form.value.working_area_id = user.value.working_area_id || null
     form.value.birth_date = user.value.birth_date || ''
+    avatarId.value = user.value.avatar_id ?? null
+    avatarUrl.value = user.value.avatar_url ?? null
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Ошибка при загрузке данных.'
   } finally {
@@ -45,16 +53,17 @@ async function onSubmit(): Promise<void> {
   busy.value = true
   try {
     // Пустую дату шлём как null: бэкенд-валидация 'date' не принимает пустую строку.
-    const payload = {
+    const payload: ProfileUpdatePayload = {
       name: form.value.name.trim(),
       birth_date: form.value.birth_date || null,
       working_area_id: form.value.working_area_id,
+      avatar_id: avatarId.value,
     }
 
     const updatedUser = await realtimeService.updateProfile(payload)
 
     // Обновляем данные в auth-сторе, чтобы профиль и hero-заголовок были актуальны.
-    if (updatedUser && user.value) {
+    if (user.value) {
       Object.assign(user.value, updatedUser)
     }
 
@@ -84,8 +93,15 @@ async function onSubmit(): Promise<void> {
       <div
         class="rounded-card border border-border-subtle bg-surface-card p-4 shadow-[var(--shadow-card)] dark:border-white/10 dark:bg-zinc-900"
       >
+        <!-- Аватар: файл загружается сразу, users.avatar_id присваивается при сохранении -->
+        <AvatarPicker
+          v-model="avatarId"
+          v-model:url="avatarUrl"
+          :name="user?.name"
+        />
+
         <!-- Имя -->
-        <div>
+        <div class="mt-4">
           <label class="text-sm text-text-secondary" for="profile-name">Имя</label>
           <input
             id="profile-name"

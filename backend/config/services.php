@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    // HTTP API VK Карт: обратное геокодирование адресов точек заказа.
+    'vk_maps' => [
+        'key' => env('VK_MAPS_API_KEY'),
+        'base_url' => env('VK_MAPS_BASE_URL', 'https://maps.vk.com/api'),
+        // Проверка TLS-сертификата VK API. Выключать только локально, если у PHP нет CA-бандла.
+        'verify' => env('VK_MAPS_HTTP_VERIFY', true),
+    ],
+
 ];

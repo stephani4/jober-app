@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import OrderExecutorBadge from '@/components/orders/OrderExecutorBadge.vue'
 import { orderStatusLabel, type Order, type OrderStatus } from '@/schemas/order'
 
 const props = defineProps<{
@@ -79,6 +80,13 @@ const costLabel = computed(() =>
     >
       {{ orderStatusLabel[status] }}
     </p>
+    <!-- Исполнитель, взявший заказ в работу. -->
+    <div
+      v-if="order.executor"
+      class="mt-3 rounded-2xl border border-border-subtle bg-surface-muted/60 px-3 py-2 dark:border-white/10 dark:bg-zinc-800/60"
+    >
+      <OrderExecutorBadge :executor="order.executor" label="Исполнитель" />
+    </div>
     <p
       v-if="order.status === 'cancel' && order.reason"
       class="mt-3 text-sm text-accent-danger"

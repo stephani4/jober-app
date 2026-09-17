@@ -26,7 +26,7 @@ class AdminUserService
         $payload = $this->validateList($data);
         $limit = self::PAGE_SIZE;
 
-        $query = User::query()->orderByDesc('id');
+        $query = User::query()->with('avatar')->orderByDesc('id');
 
         if (! empty($payload['name'])) {
             $query->where(DB::raw('LOWER(name)'), 'like', '%'.mb_strtolower($this->escapeLike($payload['name'])).'%');

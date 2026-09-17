@@ -31,6 +31,9 @@ class OrderExecutingResource extends JsonResource
             'lon' => $this->lon !== null ? (float) $this->lon : null,
             'location_at' => $this->location_at?->toISOString(),
             'order' => $this->whenLoaded('order', fn () => OrderResource::make($this->order)->resolve($request)),
+            'executor' => $this->whenLoaded('executor', fn () => $this->executor !== null
+                ? OrderExecutorResource::make($this->executor)->resolve($request)
+                : null),
             'points' => $this->whenLoaded('points', fn () => $this->points
                 ->sortBy(fn ($point) => $point->orderPoint?->position ?? 0)
                 ->values()

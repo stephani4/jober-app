@@ -1,5 +1,6 @@
 export * from '@/schemas/user'
 export * from '@/schemas/auth'
+export * from '@/schemas/file'
 export * from '@/schemas/order'
 export * from '@/schemas/orderMessage'
 export * from '@/schemas/notification'

@@ -30,6 +30,14 @@ export const orderPointSchema = z.object({
   intercom: z.number().int().nullable().optional(),
 })
 
+/** Исполнитель, принявший заказ в работу: имя и аватар для карточек заказа. */
+export const orderExecutorSchema = z.object({
+  id: z.number().int().positive(),
+  name: z.string(),
+  avatar_id: z.number().int().positive().nullable().optional(),
+  avatar_url: z.string().nullable().optional(),
+})
+
 export const orderSchema = z.object({
   id: z.number().int().positive(),
   user_id: z.number().int().positive(),
@@ -44,6 +52,8 @@ export const orderSchema = z.object({
   created_at: z.string().nullable().optional(),
   updated_at: z.string().nullable().optional(),
   user: userSchema.pick({ id: true, name: true, email: true, role: true }).optional(),
+  // Исполнитель заказа: приходит, когда заказ взят в работу.
+  executor: orderExecutorSchema.nullable().optional(),
   points: z.array(orderPointSchema).default([]),
 })
 
@@ -129,6 +139,8 @@ export const orderExecutingSchema = z.object({
   lon: z.number().nullable().optional(),
   location_at: z.string().nullable().optional(),
   order: orderSchema.optional(),
+  // Исполнитель текущего назначения — для страницы наблюдения.
+  executor: orderExecutorSchema.nullable().optional(),
   points: z.array(orderExecutingPointSchema).default([]),
 })
 
@@ -155,6 +167,7 @@ export const orderHistoryListSchema = z.object({
 })
 
 export type OrderPoint = z.infer<typeof orderPointSchema>
+export type OrderExecutor = z.infer<typeof orderExecutorSchema>
 export type OrderType = z.infer<typeof orderTypeSchema>
 export type Order = z.infer<typeof orderSchema>
 export type OrderCreatedEvent = z.infer<typeof orderCreatedEventSchema>
