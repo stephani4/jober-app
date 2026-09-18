@@ -2,6 +2,7 @@
 
 namespace App\Services\Centrifugo;
 
+use App\Models\Admin;
 use App\Models\User;
 
 /**
@@ -28,9 +29,33 @@ class CentrifugoTokenService
         ]);
     }
 
+    /**
+     * JWT для сотрудника админки: подписка на канал наблюдения за заказом.
+     */
+    public function issueForAdmin(Admin $admin, ?int $orderId = null): string
+    {
+        $now = time();
+        $ttl = (int) config('centrifugo.token_ttl', 3600);
+
+        return $this->encode([
+            'sub' => 'admin-'.$admin->id,
+            'iat' => $now,
+            'exp' => $now + $ttl,
+            'channels' => $orderId !== null ? [$this->orderChannel($orderId)] : [],
+        ]);
+    }
+
     public function personalChannel(User $user): string
     {
         return (string) config('centrifugo.channels.personal_prefix').$user->id;
+    }
+
+    /**
+     * Канал наблюдения за заказом: координаты и статусы выполнения для админки.
+     */
+    public function orderChannel(int $orderId): string
+    {
+        return 'orders:'.$orderId;
     }
 
     /**

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { isAxiosError } from 'axios'
+import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import InputNumber from 'primevue/inputnumber'
 import Select from 'primevue/select'
@@ -8,6 +9,7 @@ import CancelReasonDialog from '@/components/CancelReasonDialog.vue'
 import { useAdminOrders, useAuth } from '@/composables'
 import { orderStatusLabel, type Order, type OrderStatus } from '@/schemas/order'
 
+const router = useRouter()
 const { can } = useAuth()
 const {
   items,
@@ -93,6 +95,10 @@ function extractError(err: unknown, fallback: string): string {
     )
   }
   return fallback
+}
+
+function onShow(order: Order): void {
+  void router.push({ name: 'order-show', params: { id: String(order.id) } })
 }
 
 async function onApprove(order: Order): Promise<void> {
@@ -236,7 +242,7 @@ function costLabel(value: number): string {
             <th class="px-4 py-3 font-medium">Автор</th>
             <th class="px-4 py-3 font-medium">Стоимость</th>
             <th class="px-4 py-3 font-medium">Статус</th>
-            <th class="px-4 py-3 font-medium" />
+            <th class="px-4 py-3 font-medium">Действия</th>
           </tr>
         </thead>
         <tbody>
@@ -263,23 +269,35 @@ function costLabel(value: number): string {
             <td class="px-4 py-3">{{ costLabel(order.cost) }}</td>
             <td class="px-4 py-3">{{ orderStatusLabel[order.status] }}</td>
             <td class="px-4 py-3">
-              <div v-if="order.status === 'moderate'" class="flex flex-col gap-2">
+              {{ orderStatusLabel[order.status] }}
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex flex-col gap-2">
                 <Button
-                  v-if="can('orders.approve')"
                   size="small"
-                  label="Одобрить"
-                  :loading="busyId === order.id"
-                  @click="onApprove(order)"
-                />
-                <Button
-                  v-if="can('orders.cancel')"
-                  size="small"
-                  severity="danger"
                   variant="outlined"
-                  label="Отклонить"
-                  :disabled="busyId === order.id"
-                  @click="cancelTarget = order"
+                  label="Открыть"
+                  icon="pi pi-arrow-up-right"
+                  @click="onShow(order)"
                 />
+                <template v-if="order.status === 'moderate'">
+                  <Button
+                    v-if="can('orders.approve')"
+                    size="small"
+                    label="Одобрить"
+                    :loading="busyId === order.id"
+                    @click="onApprove(order)"
+                  />
+                  <Button
+                    v-if="can('orders.cancel')"
+                    size="small"
+                    severity="danger"
+                    variant="outlined"
+                    label="Отклонить"
+                    :disabled="busyId === order.id"
+                    @click="cancelTarget = order"
+                  />
+                </template>
               </div>
             </td>
           </tr>

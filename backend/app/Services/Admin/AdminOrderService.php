@@ -2,8 +2,10 @@
 
 namespace App\Services\Admin;
 
+use App\Enums\OrderExecutingStatus;
 use App\Enums\OrderStatus;
 use App\Models\Order;
+use App\Models\OrderExecuting;
 use App\Services\OrderModerationService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
@@ -31,7 +33,7 @@ class AdminOrderService
         $limit = self::PAGE_SIZE;
 
         $query = Order::query()
-            ->with(['points', 'user', 'currentExecuting', 'orderType'])
+            ->with(['points', 'user', 'currentExecuting.executor.avatar', 'orderType'])
             ->orderByDesc('id');
 
         if ($payload['status'] !== null) {
@@ -66,6 +68,36 @@ class AdminOrderService
             'items' => $page,
             'next_cursor' => $hasMore ? (int) $page->last()->id : null,
         ];
+    }
+
+    public function show(Order $order): Order
+    {
+        return $order->load(['points', 'user', 'currentExecuting.executor.avatar', 'orderType']);
+    }
+
+    /**
+     * Текущее выполнение заказа для вкладки «Наблюдение» в админке.
+     * Возвращает null, пока заказ не взят в работу.
+     */
+    public function watching(Order $order): ?OrderExecuting
+    {
+        $executing = OrderExecuting::query()
+            ->where('order_id', $order->id)
+            ->whereIn('status', [OrderExecutingStatus::Process, OrderExecutingStatus::Confirmation])
+            ->latest('id')
+            ->first();
+
+        if (! $executing) {
+            return null;
+        }
+
+        return $executing->load([
+            'order.points',
+            'order.user',
+            'order.currentExecuting.executor.avatar',
+            'executor.avatar',
+            'points.orderPoint',
+        ]);
     }
 
     public function approve(Order $order): Order

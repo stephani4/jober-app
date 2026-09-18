@@ -168,17 +168,19 @@ class OrderRpcService
         $executing = $this->executing->updateLocation($user, $data);
         $author = $executing->order->user;
 
+        // Координаты уходят заказчику и в канал наблюдения заказа для админки.
+        $payload = [
+            'type' => 'executor.location',
+            'order_id' => $executing->order_id,
+            'lat' => (float) $executing->lat,
+            'lon' => (float) $executing->lon,
+        ];
+
         if ($author) {
-            $this->centrifugo->publish(
-                $this->tokens->personalChannel($author),
-                [
-                    'type' => 'executor.location',
-                    'order_id' => $executing->order_id,
-                    'lat' => (float) $executing->lat,
-                    'lon' => (float) $executing->lon,
-                ],
-            );
+            $this->centrifugo->publish($this->tokens->personalChannel($author), $payload);
         }
+
+        $this->centrifugo->publish($this->tokens->orderChannel($executing->order_id), $payload);
 
         return ['ok' => true];
     }
@@ -203,6 +205,15 @@ class OrderRpcService
                 ],
             );
         }
+
+        // Снимок выполнения и в канал наблюдения заказа: админка видит статусы точек.
+        $this->centrifugo->publish(
+            $this->tokens->orderChannel($result->order_id),
+            [
+                'type' => 'order.executing',
+                'executing' => $this->executingToArray($result),
+            ],
+        );
 
         if ($result->status === OrderExecutingStatus::Complete) {
             $this->notifications->notifyOrderCompleted($result);

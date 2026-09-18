@@ -1,9 +1,13 @@
 import { http } from '@/services/HttpClient'
 import {
   orderActionSchema,
+  orderExecutingPayloadSchema,
   orderListSchema,
+  orderShowSchema,
   orderTypeListSchema,
+  realtimeTokenSchema,
   type Order,
+  type OrderExecuting,
   type OrderList,
   type OrderStatus,
   type OrderTypeList,
@@ -34,6 +38,32 @@ export class AdminOrderService {
       },
     })
     return orderListSchema.parse(data)
+  }
+
+  /**
+   * Страница заказа: общая информация, точки и исполнитель.
+   */
+  async show(orderId: number): Promise<Order> {
+    const { data } = await http.client.get(`/admin/orders/${orderId}`)
+    return orderShowSchema.parse(data).order
+  }
+
+  /**
+   * Текущее выполнение заказа для вкладки «Наблюдение» (null, пока не взято в работу).
+   */
+  async executing(orderId: number): Promise<OrderExecuting | null> {
+    const { data } = await http.client.get(`/admin/orders/${orderId}/executing`)
+    return orderExecutingPayloadSchema.parse(data).executing
+  }
+
+  /**
+   * Connection JWT Centrifugo; с orderId — подписка на канал наблюдения заказа.
+   */
+  async realtimeToken(orderId: number): Promise<string> {
+    const { data } = await http.client.get('/admin/realtime/token', {
+      params: { order_id: orderId },
+    })
+    return realtimeTokenSchema.parse(data).token
   }
 
   async approve(orderId: number): Promise<Order> {

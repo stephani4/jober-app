@@ -151,6 +151,7 @@ services:
       - "5174:5174"
     environment:
       VITE_API_PROXY_TARGET: http://backend:8000
+      VITE_CENTRIFUGO_PROXY_TARGET: http://centrifugo:8000
       CHOKIDAR_USEPOLLING: "true"
     depends_on:
       - backend

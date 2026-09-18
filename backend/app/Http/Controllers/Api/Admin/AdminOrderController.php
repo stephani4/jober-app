@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrderExecutingResource;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Services\Admin\AdminOrderService;
@@ -10,7 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * HTTP-контур ручной модерации заказов.
+ * HTTP-контур заказов для админки: списки, модерация, страница заказа.
  */
 class AdminOrderController extends Controller
 {
@@ -31,6 +32,30 @@ class AdminOrderController extends Controller
                 ->values()
                 ->all(),
             'next_cursor' => $page['next_cursor'],
+        ]);
+    }
+
+    /**
+     * Страница заказа /admin/orders/{id}/show: общая информация.
+     */
+    public function show(Request $request, Order $order): JsonResponse
+    {
+        return response()->json([
+            'order' => OrderResource::make($this->orders->show($order))->resolve($request),
+        ]);
+    }
+
+    /**
+     * Текущее выполнение заказа для вкладки «Наблюдение» (null, пока не взято в работу).
+     */
+    public function executing(Request $request, Order $order): JsonResponse
+    {
+        $executing = $this->orders->watching($order);
+
+        return response()->json([
+            'executing' => $executing !== null
+                ? OrderExecutingResource::make($executing)->resolve($request)
+                : null,
         ]);
     }
 
