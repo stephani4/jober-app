@@ -1,0 +1,51 @@
+---
+description: Конвенции PWA (service layer, composables, Zod, формы, layouts)
+globs: pwa/**/*.{ts,vue}
+alwaysApply: false
+---
+
+# PWA
+
+> Область: `pwa/**/*.{ts,vue}` — следуй этим правилам при работе с клиентским приложением.
+
+## Конвенции (Service Layer)
+
+- Use the **Service Layer** pattern for backend API calls: put HTTP requests in dedicated service classes (class-style), not inside Vue components or stores when the logic is non-trivial.
+- Prefer a clear structure, e.g. `src/services/*.ts` with classes like `AuthService`, `UserService`.
+- Components stay thin: UI and calling **composables** — no raw `fetch`/`axios` and no direct store usage in views/components.
+- Write **clean, maintainable components**: single responsibility, clear names, small templates, no dead code or unnecessary complexity.
+
+## Composables и stores
+
+- Put complex shared state and side effects in **Pinia stores** (`src/stores/`).
+- Expose a clear **contract** for UI through **composables** (`src/composables/`), e.g. `useAuth()`, `useTheme()`, `useLoginForm()`.
+- Components and views import composables — do not call stores directly from UI layers.
+- Composables may compose stores, schemas, validations, and services; keep the returned API small and intentional.
+
+## Схемы и валидации
+
+- Describe entity types (users, orders, and other domain models) with **Zod** schemas in `src/schemas/`.
+- Infer TypeScript types from Zod via `z.infer<typeof Schema>` — avoid duplicating plain interfaces when a schema exists.
+- Validate forms and client input with **Vuelidate**; keep validation rule factories in `src/validations/`.
+- Components import schemas/validations — do not inline complex validation or entity shape definitions in views.
+
+## Формы
+
+- Decompose page forms into dedicated components under `src/components/` (e.g. `components/auth/LoginForm.vue`).
+- Views own page chrome/titles and compose form components — do not keep large form markup inline in views.
+- Form components encapsulate fields, client validation (Vuelidate), and emit/submit results to the parent or call stores/services.
+
+## Layouts
+
+- Keep a shared base shell in `src/layouts/Layout.vue` (background, page frame, `header` / default / `footer` slots).
+- Guest routes (login, register) use `UnauthorizeLayout.vue`.
+- Authenticated routes use `AuthLayout.vue` (`AppHeroHeader`, `AppBottomNav`, page content).
+- Switch layouts via nested Vue Router routes — do not wrap every view in its own full-page chrome.
+- Views render page content only; chrome belongs to layouts.
+
+## Комментарии
+
+- Comment **classes**, exported **functions/composables**, and non-trivial **methods** with brief JSDoc/TSDoc (purpose, params, return).
+- Comment **complex logic** (non-obvious branches, invariants, workarounds) with short inline notes — explain *why*, not restating *what*.
+- Keep comments up to date with the code; remove obsolete comments.
+- Prefer concise Russian or English comments consistent with surrounding code; do not spam obvious one-liners.

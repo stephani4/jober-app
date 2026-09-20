@@ -1,0 +1,24 @@
+---
+description: Конвенции админ-SPA (service layer, Zod, изоляция от PWA)
+globs: admin/**/*.{ts,vue}
+alwaysApply: false
+---
+
+# Admin
+
+> Область: `admin/**/*.{ts,vue}` — следуй этим правилам при работе с админкой (Vue SPA).
+
+## Конвенции (Service Layer)
+
+- Use the **Service Layer** pattern for backend API calls: put HTTP requests in dedicated service classes, not inside Vue components or stores when the logic is non-trivial.
+- Prefer `src/services/*.ts` with classes like `AuthService`, `AdminOrderService`.
+- Components stay thin: UI and composables — no raw `fetch`/`axios` and no direct store usage in views/components.
+- Describe entities with **Zod** schemas in `src/schemas/`. Infer types via `z.infer`.
+- Do not import from `pwa/`. Admin token is `jober_admin_token`.
+
+## Комментарии
+
+- Comment **classes**, exported **functions/composables**, and non-trivial **methods** with brief JSDoc/TSDoc (purpose, params, return).
+- Comment **complex logic** (non-obvious branches, invariants, workarounds) with short inline notes — explain *why*, not restating *what*.
+- Keep comments up to date with the code; remove obsolete comments.
+- Prefer concise Russian or English comments consistent with surrounding code; do not spam obvious one-liners.
