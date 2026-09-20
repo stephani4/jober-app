@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'entrance',
     'floor',
     'apartment',
-    'intercom'
+    'intercom',
 ])]
 class OrderPoint extends Model
 {
@@ -46,6 +46,14 @@ class OrderPoint extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    /**
+     * Файлы, прикреплённые к этой точке.
+     */
+    public function files(): HasMany
+    {
+        return $this->hasMany(File::class);
     }
 
     /**

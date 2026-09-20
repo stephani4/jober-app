@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { uploadedFileSchema } from '@/schemas/file'
 import { userSchema } from '@/schemas/user'
 
 export const BUY_AND_DELIVER_TYPE_ID = 1
@@ -28,6 +29,7 @@ export const orderPointSchema = z.object({
   floor: z.number().int().nullable().optional(),
   apartment: z.string().nullable().optional(),
   intercom: z.number().int().nullable().optional(),
+  files: z.array(uploadedFileSchema).optional().default([]),
 })
 
 /** Исполнитель, принявший заказ в работу: имя и аватар для карточек заказа. */
@@ -99,6 +101,7 @@ export const createOrderPointPayloadSchema = z.object({
   floor: z.number().int().min(0).nullable().optional(),
   apartment: z.string().trim().max(20).nullable().optional(),
   intercom: z.number().int().min(0).nullable().optional(),
+  file_ids: z.array(z.number().int().positive()).max(10).optional().default([]),
 })
 
 export const createOrderPayloadSchema = z.object({

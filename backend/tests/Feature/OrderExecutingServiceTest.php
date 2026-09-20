@@ -429,6 +429,29 @@ class OrderExecutingServiceTest extends TestCase
         $this->assertSame($executor->id, $payload['order']['executor']['id']);
     }
 
+    public function test_executing_payload_includes_point_files(): void
+    {
+        [$executor, $order] = $this->executorAndOrder();
+        $file = File::query()->create([
+            'name' => 'brief.pdf',
+            'extension' => 'pdf',
+            'size' => 512,
+            'path' => 'attachments/brief.pdf',
+        ]);
+        $file->forceFill([
+            'temporary_at' => null,
+            'order_point_id' => $order->points[0]->id,
+        ])->save();
+
+        app(OrderExecutingService::class)->start($executor, ['order_id' => $order->id]);
+
+        $payload = app(OrderRpcService::class)->executing($executor, ['order_id' => $order->id]);
+
+        $this->assertSame('brief.pdf', $payload['points'][0]['order_point']['files'][0]['name']);
+        $this->assertSame('/api/files/'.$file->id, $payload['points'][0]['order_point']['files'][0]['url']);
+        $this->assertSame([], $payload['points'][1]['order_point']['files']);
+    }
+
     /**
      * @return array{0: User, 1: Order}
      */

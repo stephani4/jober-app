@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import VkMapPicker from '@/components/map/VkMapPicker.vue'
 import BuildingDetailsFields from '@/components/orders/BuildingDetailsFields.vue'
+import OrderPointFileField from '@/components/orders/OrderPointFileField.vue'
 import type { DraftOrderPoint } from '@/stores/orderCreate'
 
 const props = defineProps<{
@@ -103,6 +104,8 @@ function pointLabel(point: DraftOrderPoint): string {
           class="mt-1 w-full rounded-xl border border-border-subtle bg-surface-muted px-3 py-2 text-text-primary outline-none dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-100"
           :placeholder="descriptionPlaceholder"
         />
+
+        <OrderPointFileField v-model="element.files" />
 
         <p class="mt-3 text-sm text-text-secondary">{{ pointLabel(element) }}</p>
 

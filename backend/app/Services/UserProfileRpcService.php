@@ -36,6 +36,10 @@ class UserProfileRpcService
         $user->update($validator->validated());
         $user->loadMissing('avatar');
 
+        if ($user->avatar_id) {
+            app(FileService::class)->commit([(int) $user->avatar_id]);
+        }
+
         return [
             'id' => $user->id,
             'name' => $user->name,

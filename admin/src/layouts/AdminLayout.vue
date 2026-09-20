@@ -3,9 +3,10 @@ import { RouterLink, RouterView, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import { useAuth } from '@/composables'
+import { Permission } from '@/permissions'
 
 const router = useRouter()
-const { admin, logout } = useAuth()
+const { admin, logout, can } = useAuth()
 
 async function onLogout(): Promise<void> {
   await logout()
@@ -22,6 +23,7 @@ async function onLogout(): Promise<void> {
       </div>
       <nav class="flex-1 space-y-1 px-3">
         <RouterLink
+          v-if="can(Permission.OrdersView)"
           :to="{ name: 'orders' }"
           class="block rounded-lg px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white"
           active-class="bg-white/15 text-white"
@@ -29,11 +31,20 @@ async function onLogout(): Promise<void> {
           Заказы
         </RouterLink>
         <RouterLink
+          v-if="can(Permission.UsersView)"
           :to="{ name: 'users' }"
           class="block rounded-lg px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white"
           active-class="bg-white/15 text-white"
         >
           Пользователи
+        </RouterLink>
+        <RouterLink
+          v-if="can(Permission.AdminsView)"
+          :to="{ name: 'admins' }"
+          class="block rounded-lg px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white"
+          active-class="bg-white/15 text-white"
+        >
+          Администраторы
         </RouterLink>
         <RouterLink
           :to="{ name: 'working-areas' }"

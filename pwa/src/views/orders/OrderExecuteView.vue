@@ -49,6 +49,8 @@ const pointDescription = computed(
 const pointAddress = computed(() => currentPoint.value?.order_point?.address ?? null)
 
 const pointAccess = computed(() => currentPoint.value?.order_point ?? null)
+
+const pointFiles = computed(() => currentPoint.value?.order_point?.files ?? [])
 </script>
 
 <template>
@@ -85,6 +87,7 @@ const pointAccess = computed(() => currentPoint.value?.order_point ?? null)
         :description="pointDescription"
         :address="pointAddress"
         :access-point="pointAccess"
+        :files="pointFiles"
         :is-last="isLast"
         :submitting="submitting"
         :error="error"

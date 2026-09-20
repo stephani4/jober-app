@@ -96,7 +96,7 @@ class AdminOrderService
             'order.user',
             'order.currentExecuting.executor.avatar',
             'executor.avatar',
-            'points.orderPoint',
+            'points.orderPoint.files',
         ]);
     }
 

@@ -24,8 +24,8 @@ class OrderService
 
     public function __construct(
         private readonly VkMapsGeocodingService $geocoder,
-    ) {
-    }
+        private readonly FileService $files,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $data
@@ -46,7 +46,7 @@ class OrderService
             ]);
 
             foreach (array_values($points) as $index => $point) {
-                $order->points()->create([
+                $created = $order->points()->create([
                     'description' => $point['description'],
                     'address' => $point['address'] ?? null,
                     'lat' => $point['lat'],
@@ -58,9 +58,14 @@ class OrderService
                     'apartment' => $point['apartment'] ?? null,
                     'intercom' => $point['intercom'] ?? null,
                 ]);
+
+                $this->files->commit(
+                    array_map('intval', $point['file_ids'] ?? []),
+                    $created->id,
+                );
             }
 
-            return $order->load(['points', 'user', 'currentExecuting', 'orderType']);
+            return $order->load(['points.files', 'user', 'currentExecuting', 'orderType']);
         });
     }
 
@@ -95,7 +100,7 @@ class OrderService
     public function listMine(User $user): Collection
     {
         return Order::query()
-            ->with(['points', 'user', 'currentExecuting.executor.avatar', 'orderType'])
+            ->with(['points.files', 'user', 'currentExecuting.executor.avatar', 'orderType'])
             ->where('user_id', $user->id)
             ->whereIn('status', [
                 OrderStatus::Moderate,
@@ -118,7 +123,7 @@ class OrderService
         $limit = self::HISTORY_PAGE_SIZE;
 
         $query = Order::query()
-            ->with(['points', 'user', 'currentExecuting.executor.avatar', 'orderType'])
+            ->with(['points.files', 'user', 'currentExecuting.executor.avatar', 'orderType'])
             ->where('user_id', $user->id)
             ->whereIn('status', [
                 OrderStatus::Complete,
@@ -148,7 +153,7 @@ class OrderService
     public function listFeed(): Collection
     {
         return Order::query()
-            ->with(['points', 'user', 'currentExecuting.executor.avatar', 'orderType'])
+            ->with(['points.files', 'user', 'currentExecuting.executor.avatar', 'orderType'])
             ->where('status', OrderStatus::Wait)
             ->latest()
             ->limit(50)
@@ -179,6 +184,13 @@ class OrderService
             'points.*.floor' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'points.*.apartment' => ['nullable', 'string', 'max:20'],
             'points.*.intercom' => ['nullable', 'integer', 'min:0', 'max:999999'],
+            'points.*.file_ids' => ['nullable', 'array', 'max:10'],
+            'points.*.file_ids.*' => [
+                'integer',
+                Rule::exists('files', 'id')->where(function ($query) {
+                    $query->whereNotNull('temporary_at')->whereNull('order_point_id');
+                }),
+            ],
         ], [
             'order_type_id.required' => 'Выберите вид заказа.',
             'order_type_id.exists' => 'Выберите вид заказа.',
@@ -192,6 +204,7 @@ class OrderService
                 : 'Опишите, что нужно сделать в точке.',
             'points.*.lat.required' => 'Выберите точку на карте.',
             'points.*.lon.required' => 'Выберите точку на карте.',
+            'points.*.file_ids.*.exists' => 'Файл не найден или уже прикреплён к заказу.',
         ]);
 
         if ($validator->fails()) {
@@ -200,6 +213,18 @@ class OrderService
 
         /** @var array{order_type_id: int, description?: string, cost: float|int|string, points: list<array<string, mixed>>} $validated */
         $validated = $validator->validated();
+
+        $fileIds = collect($validated['points'])
+            ->pluck('file_ids')
+            ->flatten()
+            ->filter()
+            ->values();
+
+        if ($fileIds->count() !== $fileIds->unique()->count()) {
+            throw ValidationException::withMessages([
+                'points' => ['Один файл нельзя прикрепить к двум точкам.'],
+            ]);
+        }
 
         return $validated;
     }

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import LoginForm from '@/components/LoginForm.vue'
+import { firstAllowedRoute } from '@/middleware/permission'
 
 const router = useRouter()
 
 async function onSuccess(): Promise<void> {
-  await router.replace({ name: 'orders' })
+  await router.replace(firstAllowedRoute())
 }
 </script>
 

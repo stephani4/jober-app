@@ -8,6 +8,8 @@ import Select from 'primevue/select'
 import CancelReasonDialog from '@/components/CancelReasonDialog.vue'
 import { useAdminOrders, useAuth } from '@/composables'
 import { orderStatusLabel, type Order, type OrderStatus } from '@/schemas/order'
+import { Permission } from '@/permissions'
+import { PermissionDeniedError } from '@/middleware/permission'
 
 const router = useRouter()
 const { can } = useAuth()
@@ -83,6 +85,9 @@ function onReset(): void {
 }
 
 function extractError(err: unknown, fallback: string): string {
+  if (err instanceof PermissionDeniedError) {
+    return err.message
+  }
   if (isAxiosError(err)) {
     return (
       err.response?.data?.message
@@ -107,9 +112,7 @@ async function onApprove(order: Order): Promise<void> {
   try {
     await approve(order.id)
   } catch (err) {
-    error.value = isAxiosError(err)
-      ? err.response?.data?.message || err.response?.data?.errors?.order?.[0] || 'Не удалось одобрить заказ.'
-      : 'Не удалось одобрить заказ.'
+    error.value = extractError(err, 'Не удалось одобрить заказ.')
   } finally {
     busyId.value = null
   }
@@ -126,9 +129,7 @@ async function onCancel(reason: string): Promise<void> {
     await cancel(order.id, reason)
     cancelTarget.value = null
   } catch (err) {
-    error.value = isAxiosError(err)
-      ? err.response?.data?.message || err.response?.data?.errors?.reason?.[0] || 'Не удалось отклонить заказ.'
-      : 'Не удалось отклонить заказ.'
+    error.value = extractError(err, 'Не удалось отклонить заказ.')
   } finally {
     busyId.value = null
   }
@@ -282,14 +283,14 @@ function costLabel(value: number): string {
                 />
                 <template v-if="order.status === 'moderate'">
                   <Button
-                    v-if="can('orders.approve')"
+                    v-if="can(Permission.OrdersApprove)"
                     size="small"
                     label="Одобрить"
                     :loading="busyId === order.id"
                     @click="onApprove(order)"
                   />
                   <Button
-                    v-if="can('orders.cancel')"
+                    v-if="can(Permission.OrdersCancel)"
                     size="small"
                     severity="danger"
                     variant="outlined"

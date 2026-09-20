@@ -5,8 +5,8 @@ namespace App\Services;
 use App\Models\File;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Хранилище загруженных файлов: запись на диск и отдача содержимого по запросу.
@@ -43,19 +43,52 @@ class FileService
     }
 
     /**
-     * Отдаёт содержимое файла — ссылка работает в <img src> без заголовка Authorization.
+     * Сохраняет вложение точки заказа.
      */
-    public function response(File $file): StreamedResponse
+    public function storeAttachment(UploadedFile $upload): File
+    {
+        return $this->store($upload, (string) config('uploads.attachment.directory'));
+    }
+
+    /**
+     * Снимает пометку «временный» после того, как файл привязали к сущности.
+     *
+     * @param  list<int>  $ids
+     */
+    public function commit(array $ids, ?int $orderPointId = null): void
+    {
+        if ($ids === []) {
+            return;
+        }
+
+        $attributes = ['temporary_at' => null];
+        if ($orderPointId !== null) {
+            $attributes['order_point_id'] = $orderPointId;
+        }
+
+        File::query()->whereIn('id', $ids)->update($attributes);
+    }
+
+    /**
+     * Отдаёт содержимое файла — ссылка работает в <img src> без заголовка Authorization.
+     *
+     * @param  bool  $download  attachment, чтобы браузер скачал файл, а не открыл его
+     */
+    public function response(File $file, bool $download = false): StreamedResponse
     {
         $disk = Storage::disk($this->disk());
 
         abort_unless($disk->exists($file->path), 404);
 
-        return $disk->response($file->path, $file->name, [
-            'Content-Type' => $disk->mimeType($file->path) ?: 'application/octet-stream',
-            // Аватары неизменяемы (при смене создаётся новый файл), поэтому агрессивный кеш безопасен.
-            'Cache-Control' => 'public, max-age=604800',
-        ]);
+        return $disk->response(
+            $file->path,
+            $file->name,
+            [
+                'Content-Type' => $disk->mimeType($file->path) ?: 'application/octet-stream',
+                'Cache-Control' => 'public, max-age=604800',
+            ],
+            $download ? 'attachment' : 'inline',
+        );
     }
 
     /**

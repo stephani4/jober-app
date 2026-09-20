@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import PointAccessDetails from '@/components/orders/PointAccessDetails.vue'
+import OrderPointFileList from '@/components/orders/OrderPointFileList.vue'
+import type { UploadedFile } from '@/schemas/file'
 
 defineProps<{
   stepLabel: string
@@ -12,6 +14,7 @@ defineProps<{
     apartment?: string | null
     intercom?: number | null
   } | null
+  files?: UploadedFile[]
   isLast: boolean
   submitting: boolean
   error: string
@@ -35,6 +38,7 @@ const emit = defineEmits<{
       {{ address }}
     </p>
     <PointAccessDetails :point="accessPoint" />
+    <OrderPointFileList :files="files ?? []" />
     <p v-if="geoError" class="mt-3 text-sm text-accent-danger">
       {{ geoError }}
     </p>

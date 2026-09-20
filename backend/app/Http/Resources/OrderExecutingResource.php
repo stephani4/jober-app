@@ -57,6 +57,12 @@ class OrderExecutingResource extends JsonResource
                             'floor' => $point->orderPoint->floor !== null ? (int) $point->orderPoint->floor : null,
                             'apartment' => $point->orderPoint->apartment,
                             'intercom' => $point->orderPoint->intercom !== null ? (int) $point->orderPoint->intercom : null,
+                            'files' => $point->orderPoint->relationLoaded('files')
+                                ? $point->orderPoint->files
+                                    ->map(fn ($file) => FileResource::make($file)->resolve($request))
+                                    ->values()
+                                    ->all()
+                                : [],
                         ]
                         : null,
                 ])

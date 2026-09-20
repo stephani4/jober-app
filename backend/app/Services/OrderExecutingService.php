@@ -156,7 +156,7 @@ class OrderExecutingService
                 ]);
             }
 
-            $executing->load(['points.orderPoint']);
+            $executing->load(['points.orderPoint.files']);
 
             $current = $executing->points
                 ->first(fn (OrderExecutingPoint $point) => $point->status === OrderExecutingStatus::Process);
@@ -588,7 +588,7 @@ class OrderExecutingService
             'order.user',
             'order.currentExecuting.executor.avatar',
             'executor.avatar',
-            'points.orderPoint',
+            'points.orderPoint.files',
         ]);
     }
 }

@@ -4,6 +4,8 @@ import { useOrdersStore } from '@/stores/orders'
 import { adminOrderService, type OrderListFilters } from '@/services/AdminOrderService'
 import { adminOrderTypeService } from '@/services/AdminOrderTypeService'
 import type { OrderType } from '@/schemas/order'
+import { Permission } from '@/permissions'
+import { withPermission } from '@/middleware/permission'
 
 /**
  * Список заказов: фильтры, пагинация и действия модерации.
@@ -22,15 +24,15 @@ export function useAdminOrders() {
     types.value = (await adminOrderTypeService.list()).types
   }
 
-  async function approve(orderId: number): Promise<void> {
+  const approve = withPermission(Permission.OrdersApprove, async (orderId: number) => {
     const order = await adminOrderService.approve(orderId)
     store.replace(order)
-  }
+  })
 
-  async function cancel(orderId: number, reason: string): Promise<void> {
+  const cancel = withPermission(Permission.OrdersCancel, async (orderId: number, reason: string) => {
     const order = await adminOrderService.cancel(orderId, reason)
     store.replace(order)
-  }
+  })
 
   return {
     items,

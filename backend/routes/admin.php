@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\AdminPermission;
+use App\Http\Controllers\Api\Admin\AdminAdministratorController;
 use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\AdminOrderController;
 use App\Http\Controllers\Api\Admin\AdminOrderTypeController;
@@ -37,5 +38,17 @@ Route::prefix('admin')->group(function () {
 
         Route::get('/users', [AdminUserController::class, 'index'])
             ->middleware('permission:'.AdminPermission::UsersView->value.',admin');
+
+        Route::get('/admins/catalog', [AdminAdministratorController::class, 'catalog']);
+        Route::get('/admins', [AdminAdministratorController::class, 'index'])
+            ->middleware('permission:'.AdminPermission::AdminsView->value.',admin');
+        Route::post('/admins', [AdminAdministratorController::class, 'store'])
+            ->middleware('permission:'.AdminPermission::AdminsCreate->value.',admin');
+        Route::get('/admins/{admin}', [AdminAdministratorController::class, 'show'])
+            ->middleware('permission:'.AdminPermission::AdminsView->value.',admin');
+        Route::put('/admins/{admin}', [AdminAdministratorController::class, 'update'])
+            ->middleware('permission:'.AdminPermission::AdminsUpdate->value.',admin');
+        Route::delete('/admins/{admin}', [AdminAdministratorController::class, 'destroy'])
+            ->middleware('permission:'.AdminPermission::AdminsDelete->value.',admin');
     });
 });

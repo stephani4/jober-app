@@ -17,7 +17,7 @@ class OrderResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $this->resource->loadMissing('orderType');
+        $this->resource->loadMissing(['orderType', 'points.files']);
 
         return [
             'id' => $this->id,
@@ -52,6 +52,9 @@ class OrderResource extends JsonResource
                 'floor' => $point->floor !== null ? (int) $point->floor : null,
                 'apartment' => $point->apartment,
                 'intercom' => $point->intercom !== null ? (int) $point->intercom : null,
+                'files' => $point->relationLoaded('files')
+                    ? $point->files->map(fn ($file) => FileResource::make($file)->resolve($request))->values()->all()
+                    : [],
             ])->values()->all()),
         ];
     }

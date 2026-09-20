@@ -35,6 +35,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/order-types', [OrderTypeController::class, 'index']);
     // Изображение аватара загружается сразу после выбора; id связывается с users.avatar_id при сохранении профиля.
     Route::post('/uploads/avatar', [FileController::class, 'storeAvatar']);
+    Route::post('/uploads', [FileController::class, 'store']);
     Route::get('/push/vapid', [PushSubscriptionController::class, 'vapid']);
     Route::post('/push/subscriptions', [PushSubscriptionController::class, 'store']);
     Route::delete('/push/subscriptions', [PushSubscriptionController::class, 'destroy']);

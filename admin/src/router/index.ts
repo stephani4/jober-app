@@ -1,13 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuth } from '@/composables'
+import { Permission } from '@/permissions'
+import { firstAllowedRoute, permissionMiddleware } from '@/middleware/permission'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    {
-      path: '/',
-      redirect: { name: 'orders' },
-    },
     {
       path: '/',
       component: () => import('@/layouts/GuestLayout.vue'),
@@ -26,19 +24,51 @@ const router = createRouter({
       meta: { requiresAuth: true },
       children: [
         {
+          path: '',
+          name: 'home',
+          meta: { landing: true },
+          component: () => import('@/views/HomeRedirectView.vue'),
+        },
+        {
+          path: 'forbidden',
+          name: 'forbidden',
+          component: () => import('@/views/ForbiddenView.vue'),
+        },
+        {
           path: 'orders',
           name: 'orders',
+          meta: { permission: Permission.OrdersView },
           component: () => import('@/views/OrdersView.vue'),
         },
         {
           path: 'orders/:id/show',
           name: 'order-show',
+          meta: { permission: Permission.OrdersView },
           component: () => import('@/views/OrderShowView.vue'),
         },
         {
           path: 'users',
           name: 'users',
+          meta: { permission: Permission.UsersView },
           component: () => import('@/views/UsersView.vue'),
+        },
+        {
+          path: 'admins',
+          name: 'admins',
+          meta: { permission: Permission.AdminsView },
+          component: () => import('@/views/AdminsView.vue'),
+        },
+        {
+          path: 'admins/create',
+          name: 'admins-create',
+          meta: { permission: Permission.AdminsCreate },
+          component: () => import('@/views/AdminFormView.vue'),
+        },
+        {
+          path: 'admins/edit/:id',
+          name: 'admins-edit',
+          meta: { permission: Permission.AdminsUpdate },
+          component: () => import('@/views/AdminFormView.vue'),
         },
         {
           path: 'working-areas',
@@ -69,10 +99,10 @@ router.beforeEach(async (to) => {
   }
 
   if (to.matched.some((record) => record.meta.guest) && isAuthenticated.value) {
-    return { name: 'orders' }
+    return firstAllowedRoute()
   }
 
-  return true
+  return permissionMiddleware(to)
 })
 
 export default router

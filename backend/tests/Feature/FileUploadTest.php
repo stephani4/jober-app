@@ -46,6 +46,7 @@ class FileUploadTest extends TestCase
         $this->assertStringStartsWith('avatars/', $file->path);
         Storage::disk('uploads')->assertExists($file->path);
         $this->assertSame("/api/files/{$file->id}", $response->json('url'));
+        $this->assertNotNull($file->temporary_at);
     }
 
     public function test_upload_rejects_non_image(): void
@@ -63,6 +64,39 @@ class FileUploadTest extends TestCase
         $this->assertDatabaseCount('files', 0);
     }
 
+    public function test_user_can_upload_order_point_attachment(): void
+    {
+        Storage::fake('uploads');
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user, 'api')
+            ->post('/api/uploads', [
+                'file' => UploadedFile::fake()->create('brief.pdf', 20, 'application/pdf'),
+            ])
+            ->assertCreated()
+            ->assertJsonPath('name', 'brief.pdf')
+            ->assertJsonPath('extension', 'pdf');
+
+        $file = File::query()->findOrFail($response->json('id'));
+        $this->assertNotNull($file->temporary_at);
+        $this->assertNull($file->order_point_id);
+        $this->assertStringStartsWith('attachments/', $file->path);
+        Storage::disk('uploads')->assertExists($file->path);
+    }
+
+    public function test_attachment_upload_rejects_unsupported_type(): void
+    {
+        Storage::fake('uploads');
+        $user = User::factory()->create();
+
+        $this->actingAs($user, 'api')
+            ->post('/api/uploads', [
+                'file' => UploadedFile::fake()->create('virus.exe', 10, 'application/x-msdownload'),
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('file');
+    }
+
     public function test_uploaded_file_is_served_by_url(): void
     {
         Storage::fake('uploads');
@@ -76,6 +110,10 @@ class FileUploadTest extends TestCase
         $this->get("/api/files/{$fileId}")
             ->assertOk()
             ->assertHeader('content-type', 'image/png');
+
+        $this->get("/api/files/{$fileId}?download=1")
+            ->assertOk()
+            ->assertHeader('content-disposition', 'attachment; filename=avatar.png');
     }
 
     public function test_profile_update_attaches_uploaded_avatar(): void
@@ -96,6 +134,7 @@ class FileUploadTest extends TestCase
         $this->assertSame($fileId, $user->fresh()->avatar_id);
         $this->assertSame($fileId, $profile['avatar_id']);
         $this->assertSame("/api/files/{$fileId}", $profile['avatar_url']);
+        $this->assertNull(File::query()->findOrFail($fileId)->temporary_at);
     }
 
     public function test_profile_update_rejects_unknown_avatar(): void

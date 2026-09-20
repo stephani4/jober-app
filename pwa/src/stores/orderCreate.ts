@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
+import type { UploadedFile } from '@/schemas/file'
 import { type CreateOrderPayload, type OrderType } from '@/schemas/order'
 import { createClientId } from '@/utils/id'
 
@@ -17,6 +18,8 @@ export interface DraftOrderPoint {
   apartment: string | null
   /** Код домофона выбранного здания (необязательно). */
   intercom: number | null
+  /** Файлы, уже загруженные на сервер (id уйдёт при создании заказа). */
+  files: UploadedFile[]
 }
 
 function createPoint(): DraftOrderPoint {
@@ -30,6 +33,7 @@ function createPoint(): DraftOrderPoint {
     floor: null,
     apartment: null,
     intercom: null,
+    files: [],
   }
 }
 
@@ -102,6 +106,7 @@ export const useOrderCreateStore = defineStore('orderCreate', () => {
         floor: point.floor,
         apartment: point.apartment?.trim() || null,
         intercom: point.intercom,
+        file_ids: point.files.map((file) => file.id),
       })),
     }
   }

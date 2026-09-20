@@ -64,6 +64,15 @@ function accessParts(point: DraftOrderPoint): string[] {
         <p v-if="accessParts(point).length" class="mt-2 text-xs text-text-secondary">
           {{ accessParts(point).join(' · ') }}
         </p>
+        <ul v-if="point.files.length" class="mt-2 space-y-1">
+          <li
+            v-for="file in point.files"
+            :key="file.id"
+            class="truncate text-xs text-text-secondary"
+          >
+            {{ file.name }}
+          </li>
+        </ul>
       </article>
     </section>
   </div>

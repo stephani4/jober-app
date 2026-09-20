@@ -86,6 +86,64 @@ class OrderServiceTest extends TestCase
         $this->assertSame(1234, (int) $point->intercom);
     }
 
+    public function test_create_order_attaches_temporary_files_to_points(): void
+    {
+        $user = User::factory()->create();
+        $file = File::query()->create([
+            'name' => 'brief.docx',
+            'extension' => 'docx',
+            'size' => 2048,
+            'path' => 'attachments/brief.docx',
+        ]);
+
+        $this->assertNotNull($file->temporary_at);
+        $this->assertNull($file->order_point_id);
+
+        $order = app(OrderService::class)->create($user, [
+            'order_type_id' => OrderType::ERRAND,
+            'cost' => 1500,
+            'points' => [[
+                'description' => 'Забрать документы',
+                'address' => 'Москва, Тверская 1',
+                'lat' => 55.757,
+                'lon' => 37.615,
+                'file_ids' => [$file->id],
+            ]],
+        ]);
+
+        $file->refresh();
+        $this->assertNull($file->temporary_at);
+        $this->assertSame($order->points[0]->id, $file->order_point_id);
+        $this->assertCount(1, $order->points[0]->files);
+        $this->assertSame('brief.docx', $order->points[0]->files[0]->name);
+    }
+
+    public function test_create_order_rejects_already_committed_file(): void
+    {
+        $user = User::factory()->create();
+        $file = File::query()->create([
+            'name' => 'used.pdf',
+            'extension' => 'pdf',
+            'size' => 100,
+            'path' => 'attachments/used.pdf',
+            'temporary_at' => null,
+        ]);
+        $file->forceFill(['temporary_at' => null])->save();
+
+        $this->expectException(ValidationException::class);
+
+        app(OrderService::class)->create($user, [
+            'order_type_id' => OrderType::ERRAND,
+            'cost' => 1500,
+            'points' => [[
+                'description' => 'Забрать документы',
+                'lat' => 55.757,
+                'lon' => 37.615,
+                'file_ids' => [$file->id],
+            ]],
+        ]);
+    }
+
     public function test_buy_and_deliver_accepts_single_point(): void
     {
         $user = User::factory()->create();
