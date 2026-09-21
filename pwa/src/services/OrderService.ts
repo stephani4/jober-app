@@ -49,6 +49,10 @@ export class OrderService {
     return realtimeService.confirmCompletion(orderId, code)
   }
 
+  rate(orderId: number, rating: number): Promise<Order> {
+    return realtimeService.rateOrder(orderId, rating)
+  }
+
   cancel(orderId: number): Promise<Order> {
     return realtimeService.cancelOrder(orderId)
   }

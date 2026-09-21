@@ -90,7 +90,7 @@ async function openCreateForType(typeId: number): Promise<void> {
   <section class="space-y-4">
     <div class="mt-3 space-y-3">
       <p class="text-sm font-semibold text-text-primary dark:text-zinc-100">
-        Какой заказ?
+        Новый заказ
       </p>
       <div v-if="orderTypesLoading" class="grid grid-cols-1 gap-3">
         <div class="h-10 rounded-2xl border border-border-subtle bg-surface-muted animate-pulse" />
@@ -111,7 +111,7 @@ async function openCreateForType(typeId: number): Promise<void> {
             v-for="type in types"
             :key="type.id"
             type="button"
-            class="flex w-full items-center gap-3 rounded-2xl border border-border-subtle bg-surface-card px-4 py-3.5 text-left transition hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/50 dark:border-white/10 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+            class="flex w-full items-center gap-3 rounded-3xl bg-surface-card px-4 py-3.5 text-left shadow-[var(--shadow-card)] transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-accent-primary/50 dark:bg-zinc-900 dark:hover:bg-zinc-800"
             @click="openCreateForType(type.id)"
         >
           <span

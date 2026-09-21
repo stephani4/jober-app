@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia'
 import { useToast } from 'primevue/usetoast'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { useOrderSound } from '@/composables/useOrderSound'
 import { realtimeService } from '@/services/RealtimeService'
 import { restoreActiveOrder, resetActiveOrderRestore } from '@/composables/useRestoreActiveOrder'
 import { useOrdersStore } from '@/stores/orders'
@@ -32,6 +33,7 @@ export function useRealtime() {
   const notifications = useNotificationsStore()
   const chat = useOrderChatStore()
   const history = useOrderHistoryStore()
+  const sound = useOrderSound()
   const { status } = storeToRefs(realtime)
 
   if (!started) {
@@ -66,7 +68,9 @@ export function useRealtime() {
             offer.dismissIf(orderId)
           })
           const stopStatus = realtimeService.onOrderStatus((event) => {
-            if (event.order.status !== 'wait') {
+            if (event.order.status === 'wait') {
+              search.upsert(event.order)
+            } else {
               search.remove(event.order.id)
               offer.dismissIf(event.order.id)
             }
@@ -144,6 +148,11 @@ export function useRealtime() {
           })
           const stopNotifications = realtimeService.onNotificationCreated((event) => {
             notifications.ingestCreated(event)
+            if (event.notification.type === 'order.taken') {
+              // Заказчику: исполнитель откликнулся и взял его заказ в работу.
+              // Уведомление этого типа приходит только автору заказа.
+              void sound.playOrderTaken()
+            }
             if (event.notification.type === 'order.cancelled' || event.notification.type === 'order.declined') {
               // Тост уже показывается в обработчиках order.cancelled / order.declined
               return

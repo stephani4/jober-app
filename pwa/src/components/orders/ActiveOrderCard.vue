@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import OrderExecutorBadge from '@/components/orders/OrderExecutorBadge.vue'
+import OrderRatingStars from '@/components/orders/OrderRatingStars.vue'
 import type { Order } from '@/schemas/order'
 
 const props = defineProps<{
@@ -103,6 +104,13 @@ const routeLabel = computed(() => {
       <span class="font-semibold tracking-[0.3em]">{{ confirmationCode }}</span>
       <span class="ml-1 text-xs text-text-secondary">— сообщите его исполнителю</span>
     </p>
+
+    <OrderRatingStars
+      v-if="order.can_rate || order.rating"
+      :order-id="order.id"
+      :rating="order.rating"
+      :can-rate="order.can_rate"
+    />
 
     <button
       v-if="watchable"

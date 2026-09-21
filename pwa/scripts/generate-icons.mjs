@@ -1,5 +1,5 @@
 import { deflateSync } from 'node:zlib'
-import { writeFileSync } from 'node:fs'
+import { existsSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -71,6 +71,11 @@ function iconSample(x, y, size) {
     return fg
   }
   return bg
+}
+
+if (existsSync(join(outDir, 'logo-mark.png'))) {
+  console.log('Skip placeholder icons: public/logo-mark.png is the brand mark.')
+  process.exit(0)
 }
 
 writeFileSync(join(outDir, 'pwa-192x192.png'), png(192, iconSample))

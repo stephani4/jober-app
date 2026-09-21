@@ -17,11 +17,19 @@ export default defineConfig({
       filename: 'sw.ts',
       registerType: 'autoUpdate',
       injectRegister: false,
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
+      includeAssets: [
+        'favicon.png',
+        'logo.png',
+        'logo-on-dark.png',
+        'logo-mark.png',
+        'apple-touch-icon.png',
+        'pwa-192x192.png',
+        'pwa-512x512.png',
+      ],
       manifest: {
         id: '/',
-        name: 'Jober',
-        short_name: 'Jober',
+        name: 'Делег',
+        short_name: 'Делег',
         description: 'Доска заданий для заказчиков и исполнителей',
         lang: 'ru',
         start_url: '/',
@@ -29,7 +37,7 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#ffffff',
-        theme_color: '#141414',
+        theme_color: '#f3f1ec',
         categories: ['business', 'lifestyle'],
         icons: [
           {

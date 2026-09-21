@@ -589,6 +589,7 @@ class OrderExecutingService
             'order.currentExecuting.executor.avatar',
             'executor.avatar',
             'points.orderPoint.files',
+            'rating',
         ]);
     }
 }

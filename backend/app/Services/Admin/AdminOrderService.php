@@ -72,7 +72,7 @@ class AdminOrderService
 
     public function show(Order $order): Order
     {
-        return $order->load(['points', 'user', 'currentExecuting.executor.avatar', 'orderType']);
+        return $order->load(['points.files', 'user', 'currentExecuting.executor.avatar', 'orderType']);
     }
 
     /**

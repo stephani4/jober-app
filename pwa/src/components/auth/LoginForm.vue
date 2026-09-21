@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import AppBrandLogo from '@/components/AppBrandLogo.vue'
 import { useLoginForm } from '@/composables'
 
 const props = defineProps<{
@@ -32,9 +33,11 @@ async function onSubmit(): Promise<void> {
     @submit.prevent="onSubmit"
   >
     <!-- Шапка карточки: логотип, заголовок, подзаголовок -->
-    <p class="text-lg font-semibold text-slate-900 dark:text-slate-100">Jober</p>
+    <div class="h-10 w-fit sm:h-12">
+      <AppBrandLogo />
+    </div>
     <h2 class="mt-5 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-      С возвращением в Jober
+      С возвращением в Делег
     </h2>
     <p class="mt-2 text-sm text-text-secondary dark:text-slate-400">
       Войдите, чтобы смотреть и брать заказы

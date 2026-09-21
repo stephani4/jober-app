@@ -56,6 +56,8 @@ export const orderSchema = z.object({
   user: userSchema.pick({ id: true, name: true, email: true, role: true }).optional(),
   // Исполнитель заказа: приходит, когда заказ взят в работу.
   executor: orderExecutorSchema.nullable().optional(),
+  rating: z.number().int().min(1).max(5).nullable().optional(),
+  can_rate: z.boolean().optional().default(false),
   points: z.array(orderPointSchema).default([]),
 })
 
@@ -141,6 +143,8 @@ export const orderExecutingSchema = z.object({
   lat: z.number().nullable().optional(),
   lon: z.number().nullable().optional(),
   location_at: z.string().nullable().optional(),
+  rating: z.number().int().min(1).max(5).nullable().optional(),
+  can_rate: z.boolean().optional().default(false),
   order: orderSchema.optional(),
   // Исполнитель текущего назначения — для страницы наблюдения.
   executor: orderExecutorSchema.nullable().optional(),

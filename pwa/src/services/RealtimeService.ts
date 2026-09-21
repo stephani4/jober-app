@@ -182,6 +182,14 @@ export class RealtimeService {
     return orderExecutingSchema.parse(data)
   }
 
+  async rateOrder(orderId: number, rating: number): Promise<Order> {
+    const data = await centrifugoClient.rpc<unknown>('order:rate', {
+      order_id: orderId,
+      rating,
+    })
+    return orderSchema.parse(data)
+  }
+
   async cancelOrder(orderId: number): Promise<Order> {
     const data = await centrifugoClient.rpc<unknown>('order:cancel', {
       order_id: orderId,

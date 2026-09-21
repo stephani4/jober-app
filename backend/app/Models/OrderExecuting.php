@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -67,5 +68,49 @@ class OrderExecuting extends Model
     public function points(): HasMany
     {
         return $this->hasMany(OrderExecutingPoint::class);
+    }
+
+    /**
+     * Оценка автора за это выполнение; нет записи — рейтинг ещё не ставили (null).
+     */
+    public function rating(): HasOne
+    {
+        return $this->hasOne(OrderExecutingRating::class);
+    }
+
+    /**
+     * Можно ли сейчас поставить оценку: этап confirmation или текущие сутки после complete.
+     */
+    public function canAcceptRating(): bool
+    {
+        if ($this->ratingValue() !== null) {
+            return false;
+        }
+
+        if ($this->status === OrderExecutingStatus::Confirmation) {
+            return true;
+        }
+
+        if ($this->status !== OrderExecutingStatus::Complete) {
+            return false;
+        }
+
+        $anchor = $this->confirmation_at ?? $this->complete_at;
+        if ($anchor === null) {
+            return false;
+        }
+
+        return $anchor->isSameDay(now());
+    }
+
+    /**
+     * Поставленная оценка или null, если запись ещё не создавали.
+     */
+    public function ratingValue(): ?int
+    {
+        $this->loadMissing('rating');
+        $value = $this->rating?->rating;
+
+        return $value !== null ? (int) $value : null;
     }
 }

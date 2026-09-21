@@ -61,6 +61,7 @@ class RpcController extends Controller
                 'order:location' => $this->orders->location($user, $data),
                 'order:completePoint' => $this->orders->completePoint($user, $data),
                 'order:confirm' => $this->orders->confirm($user, $data),
+                'order:rate' => $this->orders->rate($user, $data),
                 'order:cancel' => $this->orders->cancel($user, $data),
                 'order:decline' => $this->orders->decline($user, $data),
                 'order:messages' => $this->messages->list($user, $data),

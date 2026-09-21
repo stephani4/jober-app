@@ -1,53 +1,49 @@
 /**
- * Базовые дизайн-токены Jober PWA.
- * Референс: pwa/design/reference/profile-baseline.png
+ * Токены PWA. Целевой референс: light-shipment-baseline.png
  */
 @theme {
-  /* Surfaces */
-  --color-surface-hero: #141414;
-  --color-surface-page: #ffffff;
-  --color-surface-muted: #f4f4f5;
+  /* Surfaces — тёплый cream, не чистый белый холст */
+  --color-surface-hero: #f3f1ec;
+  --color-surface-page: #f3f1ec;
+  --color-surface-muted: #f3f1ec;
   --color-surface-card: #ffffff;
+  --color-surface-nav: #141414;
 
   /* Text */
-  --color-text-on-hero: #ffffff;
-  --color-text-on-hero-muted: rgb(255 255 255 / 0.72);
+  --color-text-on-hero: #18181b;
+  --color-text-on-hero-muted: #71717a;
+  --color-text-on-nav: #ffffff;
   --color-text-primary: #18181b;
   --color-text-secondary: #71717a;
 
-  /* Accent / active — оранжевый базовый акцент (design/reference/home-baseline.md) */
+  /* Brand orange (логотип Делег) + песочный акцент макета */
   --color-accent-nav: #f97316;
   --color-accent-nav-hover: #ea580c;
   --color-accent-danger: #ef4444;
-
-  /* App baseline — токены оранжевого акцента (алиасы для новых экранов) */
   --color-accent-orange: #f97316;
   --color-accent-orange-hover: #ea580c;
-  --shadow-nav-active-orange: 0 10px 24px rgb(249 115 22 / 0.35);
+  --color-accent-gold: #e0b33a;
+  --color-accent-sand: #e8d7a2;
+  --shadow-nav-active-orange: 0 10px 24px rgb(20 20 20 / 0.28);
 
-  /* Auth baseline (design/reference/auth-baseline.md) — оранжевый акцент */
   --color-accent-primary: #f97316;
   --color-accent-primary-hover: #ea580c;
   --color-hero-grad-from: #f97316;
   --color-hero-grad-to: #ea780c;
-  --color-hero-heading: #294c57;
+  --color-hero-heading: #18181b;
   --color-border-input: #e4e4e7;
 
-  /* Borders */
   --color-border-subtle: rgb(24 24 27 / 0.08);
-  --color-border-hero-control: rgb(255 255 255 / 0.18);
+  --color-border-hero-control: rgb(24 24 27 / 0.08);
 
-  /* Radius */
-  --radius-card: 1rem;
+  --radius-card: 1.25rem;
   --radius-hero: 1.75rem;
   --radius-pill: 9999px;
   --radius-nav-active: 9999px;
 
-  /* Shadows */
-  --shadow-card: 0 1px 2px rgb(24 24 27 / 0.06);
-  --shadow-nav-active: 0 10px 24px rgb(249 115 22 / 0.35);
+  --shadow-card: 0 8px 24px rgb(24 24 27 / 0.06);
+  --shadow-nav-active: 0 12px 32px rgb(20 20 20 / 0.28);
 
-  /* Spacing rhythm */
   --spacing-page-x: 1rem;
   --spacing-section-y: 1.5rem;
 }

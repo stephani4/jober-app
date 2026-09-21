@@ -100,7 +100,7 @@ class OrderService
     public function listMine(User $user): Collection
     {
         return Order::query()
-            ->with(['points.files', 'user', 'currentExecuting.executor.avatar', 'orderType'])
+            ->with(['points.files', 'user', 'currentExecuting.executor.avatar', 'currentExecuting.rating', 'orderType'])
             ->where('user_id', $user->id)
             ->whereIn('status', [
                 OrderStatus::Moderate,
@@ -123,7 +123,7 @@ class OrderService
         $limit = self::HISTORY_PAGE_SIZE;
 
         $query = Order::query()
-            ->with(['points.files', 'user', 'currentExecuting.executor.avatar', 'orderType'])
+            ->with(['points.files', 'user', 'currentExecuting.executor.avatar', 'currentExecuting.rating', 'orderType'])
             ->where('user_id', $user->id)
             ->whereIn('status', [
                 OrderStatus::Complete,
@@ -153,7 +153,7 @@ class OrderService
     public function listFeed(): Collection
     {
         return Order::query()
-            ->with(['points.files', 'user', 'currentExecuting.executor.avatar', 'orderType'])
+            ->with(['points.files', 'user', 'currentExecuting.executor.avatar', 'currentExecuting.rating', 'orderType'])
             ->where('status', OrderStatus::Wait)
             ->latest()
             ->limit(50)

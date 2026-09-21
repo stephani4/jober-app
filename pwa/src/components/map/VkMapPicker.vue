@@ -39,6 +39,10 @@ const BUILDING_QUERY_TOLERANCE = 6
 const mapError = ref('')
 /** Предупреждение: точку выбрали, но адрес дома определить не удалось. */
 const addressNotice = ref('')
+/** Идёт запрос GPS для кнопки «моя геолокация». */
+const locating = ref(false)
+/** Не удалось получить координаты по кнопке. */
+const locateError = ref('')
 
 function hasSelectedPoint(): boolean {
   return props.lon != null && props.lat != null
@@ -111,6 +115,33 @@ function applyPlace(lat: number, lon: number, address: string | null, fly: boole
     map.flyTo({ center: [lon, lat], zoom: 16 })
   }
   emit('select', { lat, lon, address })
+}
+
+/**
+ * Перемещает карту к текущим GPS-координатам. Точку заказа не выбирает.
+ */
+async function goToCurrentLocation(): Promise<void> {
+  if (!map || locating.value) {
+    return
+  }
+  locating.value = true
+  locateError.value = ''
+  try {
+    const position = await requestCurrentPosition(8000)
+    if (disposed || !map) {
+      return
+    }
+    if (!position) {
+      locateError.value = navigator.geolocation
+        ? 'Не удалось определить местоположение. Разрешите доступ к геолокации.'
+        : 'Геолокация недоступна в этом браузере.'
+      return
+    }
+    placeUserMarker([position.lon, position.lat])
+    map.flyTo({ center: [position.lon, position.lat], zoom: 16 })
+  } finally {
+    locating.value = false
+  }
 }
 
 /**
@@ -302,6 +333,9 @@ onBeforeUnmount(() => {
       </div>
 
       <p v-if="error" class="mt-2 text-sm text-rose-300">{{ error }}</p>
+      <p v-if="locateError" class="mt-2 rounded-xl bg-rose-500/15 px-3 py-2 text-sm text-rose-200">
+        {{ locateError }}
+      </p>
       <p v-if="mapError" class="mt-2 rounded-xl bg-rose-500/15 px-3 py-2 text-sm text-rose-200">
         {{ mapError }}
       </p>
@@ -312,7 +346,31 @@ onBeforeUnmount(() => {
         Выбирать можно только здания: нажмите на дом или найдите адрес в поиске.
       </p>
     </div>
-    <div ref="container" class="min-h-0 flex-1" />
+    <div class="relative flex min-h-0 flex-1 flex-col">
+      <div ref="container" class="min-h-0 flex-1" />
+      <button
+        type="button"
+        class="absolute top-1/2 right-4 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-text-primary shadow-[var(--shadow-card)] disabled:opacity-50 dark:bg-zinc-800 dark:text-zinc-100"
+        aria-label="Моё местоположение"
+        :disabled="locating"
+        @click="goToCurrentLocation"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          class="h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+          <circle cx="12" cy="12" r="8" />
+        </svg>
+      </button>
+    </div>
   </div>
 </template>
 

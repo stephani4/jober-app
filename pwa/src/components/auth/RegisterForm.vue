@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import AppBrandLogo from '@/components/AppBrandLogo.vue'
 import { useRegisterForm } from '@/composables'
 import { CustomDatepicker } from '@/components/CustomDatepicker'
 
@@ -23,7 +24,9 @@ async function onSubmit(): Promise<void> {
     @submit.prevent="onSubmit"
   >
     <!-- Шапка карточки: логотип, заголовок, подзаголовок -->
-    <p class="text-lg font-semibold text-slate-900 dark:text-slate-100">Jober</p>
+    <div class="h-10 w-fit sm:h-12">
+      <AppBrandLogo />
+    </div>
     <h2 class="mt-5 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
       Создайте аккаунт
     </h2>

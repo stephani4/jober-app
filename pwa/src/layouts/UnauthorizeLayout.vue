@@ -20,7 +20,7 @@ import AuthJoinCard from '@/components/auth/AuthJoinCard.vue'
         </main>
 
         <footer class="pt-6 text-center text-xs text-text-secondary">
-          Jober — доска заданий для заказчиков и исполнителей
+          Делег — доска заданий для заказчиков и исполнителей
         </footer>
       </section>
 

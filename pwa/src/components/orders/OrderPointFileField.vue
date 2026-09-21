@@ -62,10 +62,22 @@ function remove(id: number): void {
     </ul>
     <button
       type="button"
-      class="mt-2 w-full rounded-xl border border-dashed border-border-subtle px-4 py-3 text-sm text-text-secondary disabled:opacity-50 dark:border-white/20"
+      class="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border-subtle px-4 py-3 text-sm text-text-secondary disabled:opacity-50 dark:border-white/20"
       :disabled="uploading || files.length >= 10"
       @click="openPicker"
     >
+      <svg
+        viewBox="0 0 24 24"
+        class="h-5 w-5 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.75"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.82-2.83l8.49-8.48" />
+      </svg>
       {{ uploading ? 'Загрузка…' : 'Прикрепить файл' }}
     </button>
     <p class="mt-1 text-xs text-text-secondary">DOCX, PDF, JPG, PNG или WebP до 10 МБ</p>

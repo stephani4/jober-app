@@ -4,10 +4,13 @@ namespace Tests\Feature;
 
 use App\Enums\AdminPermission;
 use App\Enums\AdminRole;
+use App\Enums\OrderExecutingStatus;
 use App\Enums\OrderStatus;
 use App\Enums\UserRole;
 use App\Models\Admin;
+use App\Models\File;
 use App\Models\Order;
+use App\Models\OrderExecuting;
 use App\Models\OrderPoint;
 use App\Models\OrderType;
 use App\Models\User;
@@ -206,6 +209,47 @@ class AdminOrderTest extends TestCase
         $this->actingAs($admin, 'admin')
             ->postJson("/api/admin/orders/{$order->id}/approve")
             ->assertUnprocessable();
+    }
+
+    public function test_admin_order_show_includes_point_files(): void
+    {
+        $admin = $this->makeAdmin();
+        $author = User::factory()->create(['role' => UserRole::Customer]);
+        $order = $this->orderFor($author, OrderStatus::Wait);
+        $file = File::query()->create([
+            'name' => 'brief.pdf',
+            'extension' => 'pdf',
+            'size' => 512,
+            'path' => 'attachments/brief.pdf',
+        ]);
+        $file->forceFill([
+            'temporary_at' => null,
+            'order_point_id' => $order->points[0]->id,
+        ])->save();
+
+        $this->actingAs($admin, 'admin')
+            ->getJson("/api/admin/orders/{$order->id}")
+            ->assertOk()
+            ->assertJsonPath('order.points.0.files.0.name', 'brief.pdf')
+            ->assertJsonPath('order.points.0.files.0.url', '/api/files/'.$file->id);
+    }
+
+    public function test_admin_order_show_includes_execution_complete_at(): void
+    {
+        $admin = $this->makeAdmin();
+        $author = User::factory()->create(['role' => UserRole::Customer]);
+        $order = $this->orderFor($author, OrderStatus::Complete);
+        $completeAt = now()->subHour()->startOfSecond();
+        OrderExecuting::factory()->create([
+            'order_id' => $order->id,
+            'status' => OrderExecutingStatus::Complete,
+            'complete_at' => $completeAt,
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->getJson("/api/admin/orders/{$order->id}")
+            ->assertOk()
+            ->assertJsonPath('order.complete_at', $completeAt->toISOString());
     }
 
     public function test_admin_without_approve_permission_is_forbidden(): void

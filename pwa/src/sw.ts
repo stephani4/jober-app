@@ -28,7 +28,7 @@ type PushPayload = {
 self.addEventListener('push', (event) => {
   const data = parsePushData(event)
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Jober', {
+    self.registration.showNotification(data.title || 'Делег', {
       body: data.body || '',
       icon: '/pwa-192x192.png',
       badge: '/pwa-192x192.png',

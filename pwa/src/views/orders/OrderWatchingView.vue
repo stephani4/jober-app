@@ -5,6 +5,7 @@ import OrderExecuteMap from '@/components/map/OrderExecuteMap.vue'
 import OrderChatDriver from '@/components/orders/OrderChatDriver.vue'
 import OrderWatchingPanel from '@/components/orders/OrderWatchingPanel.vue'
 import { useOrderWatchingDriver } from '@/composables/useOrderWatchingDriver'
+import type { Order } from '@/schemas/order'
 
 const route = useRoute()
 
@@ -51,6 +52,18 @@ const pointDescription = computed(() => {
 const pointAddress = computed(() => currentPoint.value?.order_point?.address ?? null)
 
 const pointAccess = computed(() => currentPoint.value?.order_point ?? null)
+
+function onRated(order: Order): void {
+  if (!executing.value) {
+    return
+  }
+  executing.value = {
+    ...executing.value,
+    rating: order.rating ?? null,
+    can_rate: order.can_rate ?? false,
+    order: executing.value.order ? { ...executing.value.order, ...order } : order,
+  }
+}
 </script>
 
 <template>
@@ -79,6 +92,10 @@ const pointAccess = computed(() => currentPoint.value?.order_point ?? null)
         :confirmation-number="confirmationNumber"
         :error="error || routeError"
         :executor="executing.executor ?? null"
+        :order-id="executing.order_id"
+        :rating="executing.rating"
+        :can-rate="executing.can_rate"
+        @rated="onRated"
       />
     </template>
     <OrderChatDriver :order-id="orderId" />

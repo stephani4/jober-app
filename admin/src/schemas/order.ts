@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { uploadedFileSchema } from '@/schemas/file'
 
 export const orderStatusSchema = z.enum(['moderate', 'wait', 'process', 'complete', 'cancel'])
 export const orderExecutingStatusSchema = z.enum(['wait', 'process', 'complete', 'cancel', 'confirmation'])
@@ -22,6 +23,7 @@ export const orderPointSchema = z.object({
   floor: z.number().int().nullable().optional(),
   apartment: z.string().nullable().optional(),
   intercom: z.number().int().nullable().optional(),
+  files: z.array(uploadedFileSchema).default([]),
 })
 
 export const orderUserSchema = z.object({
@@ -49,6 +51,7 @@ export const orderSchema = z.object({
   status: orderStatusSchema.default('wait'),
   reason: z.string().nullable().optional(),
   created_at: z.string().nullable().optional(),
+  complete_at: z.string().nullable().optional(),
   user: orderUserSchema.optional(),
   // Исполнитель заказа: приходит, когда заказ взят в работу.
   executor: orderExecutorSchema.nullable().optional(),

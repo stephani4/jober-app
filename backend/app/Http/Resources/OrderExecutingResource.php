@@ -30,6 +30,8 @@ class OrderExecutingResource extends JsonResource
             'lat' => $this->lat !== null ? (float) $this->lat : null,
             'lon' => $this->lon !== null ? (float) $this->lon : null,
             'location_at' => $this->location_at?->toISOString(),
+            'rating' => $this->ratingValue(),
+            'can_rate' => $this->canAcceptRating(),
             'order' => $this->whenLoaded('order', fn () => OrderResource::make($this->order)->resolve($request)),
             'executor' => $this->whenLoaded('executor', fn () => $this->executor !== null
                 ? OrderExecutorResource::make($this->executor)->resolve($request)

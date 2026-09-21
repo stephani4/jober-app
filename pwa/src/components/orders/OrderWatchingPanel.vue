@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import OrderExecutorBadge from '@/components/orders/OrderExecutorBadge.vue'
+import OrderRatingStars from '@/components/orders/OrderRatingStars.vue'
 import PointAccessDetails from '@/components/orders/PointAccessDetails.vue'
-import type { OrderExecutor } from '@/schemas/order'
+import type { Order, OrderExecutor } from '@/schemas/order'
 
 defineProps<{
   stepLabel: string
@@ -21,6 +22,13 @@ defineProps<{
   confirmationNumber?: string | null
   /** Исполнитель, за выполнением которого наблюдает автор. */
   executor?: OrderExecutor | null
+  orderId?: number | null
+  rating?: number | null
+  canRate?: boolean
+}>()
+
+const emit = defineEmits<{
+  rated: [order: Order]
 }>()
 </script>
 
@@ -52,6 +60,13 @@ defineProps<{
       <span class="font-semibold tracking-[0.3em]">{{ confirmationNumber }}</span>
       <span class="ml-1 text-xs text-text-secondary">— сообщите его исполнителю</span>
     </p>
+    <OrderRatingStars
+      v-if="orderId && (canRate || rating)"
+      :order-id="orderId"
+      :rating="rating"
+      :can-rate="canRate"
+      @rated="emit('rated', $event)"
+    />
     <p
       v-if="!error && !awaitingConfirmation"
       class="mt-3 text-sm text-text-secondary"

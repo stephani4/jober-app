@@ -19,4 +19,4 @@ alwaysApply: true
 
 - Default color palette is **light**.
 - Support switching to a **dark** theme (class-based `dark` mode on `<html>`).
-- Baseline mobile design: `pwa/design/reference/profile-baseline.png` (см. `03-pwa-design.mdc`).
+- Baseline mobile design: `pwa/design/reference/light-shipment-baseline.png` (см. `03-pwa-design.mdc`).

@@ -86,7 +86,7 @@ onBeforeUnmount(stopAutoplay)
       >
         <div class="flex items-center justify-between">
           <span class="rounded-pill bg-white/25 px-4 py-1.5 text-xs font-medium text-white">
-            Плюсы Jober
+            Плюсы Делег
           </span>
           <div class="flex gap-2">
             <button

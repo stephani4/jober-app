@@ -13,7 +13,7 @@ async function onSuccess(): Promise<void> {
 <template>
   <div class="w-full max-w-md">
     <div class="mb-8 text-center">
-      <p class="text-sm uppercase tracking-[0.25em] text-zinc-500">Jober</p>
+      <p class="text-sm uppercase tracking-[0.25em] text-zinc-500">Делег</p>
       <h1 class="mt-3 text-3xl font-semibold text-zinc-900 dark:text-zinc-100">Вход в админку</h1>
       <p class="mt-2 text-sm text-zinc-500">Только для сотрудников. Отдельный аккаунт, не PWA.</p>
     </div>

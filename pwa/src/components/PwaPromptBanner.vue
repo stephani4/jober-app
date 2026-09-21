@@ -15,7 +15,7 @@ const { showBanner, busy, enable, dismissBanner } = useWebPush()
       v-if="canInstall"
       class="flex items-center justify-between gap-3 rounded-2xl border border-border-subtle bg-surface-card px-4 py-3 shadow-[var(--shadow-card)] dark:border-white/10 dark:bg-zinc-900"
     >
-      <p class="text-sm text-text-primary dark:text-zinc-100">Установите Jober на устройство</p>
+      <p class="text-sm text-text-primary dark:text-zinc-100">Установите Делег на устройство</p>
       <button
         type="button"
         class="shrink-0 rounded-full bg-accent-nav px-3 py-1.5 text-sm text-white"

@@ -17,7 +17,7 @@ class OrderResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $this->resource->loadMissing(['orderType', 'points.files']);
+        $this->resource->loadMissing(['orderType', 'points.files', 'currentExecuting.rating']);
 
         return [
             'id' => $this->id,
@@ -31,7 +31,11 @@ class OrderResource extends JsonResource
             'status' => $this->status->value,
             'reason' => $this->reason,
             'created_at' => $this->created_at?->toISOString(),
+            // Время завершения: order_executings.complete_at последнего назначения.
+            'complete_at' => $this->currentExecuting?->complete_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
+            'rating' => $this->currentExecuting?->ratingValue(),
+            'can_rate' => $this->currentExecuting?->canAcceptRating() ?? false,
             'user' => $this->whenLoaded('user', fn () => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,

@@ -22,7 +22,7 @@ const fullBleed = computed(() => Boolean(route.meta.fullBleed))
 
     <main
       class="flex min-h-0 flex-1 flex-col"
-      :class="fullBleed ? '' : hideNav ? 'px-4 pt-4 pb-8' : 'px-4 pt-4 pb-24'"
+      :class="fullBleed ? '' : hideNav ? 'px-4 pt-2 pb-8' : 'px-4 pt-2 pb-28'"
     >
       <PwaPromptBanner v-if="!hideNav && !fullBleed" class="mb-3" />
       <RouterView />

@@ -22,6 +22,7 @@ class OrderRpcService
     public function __construct(
         private readonly OrderService $orders,
         private readonly OrderExecutingService $executing,
+        private readonly OrderExecutingRatingService $ratings,
         private readonly NotificationService $notifications,
         private readonly CentrifugoClient $centrifugo,
         private readonly CentrifugoTokenService $tokens,
@@ -242,6 +243,19 @@ class OrderRpcService
         $this->publishOrderStatus($executing->order);
 
         return $this->executingToArray($executing);
+    }
+
+    /**
+     * Автор ставит оценку 1–5 за выполнение заказа.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public function rate(User $user, array $data): array
+    {
+        $order = $this->ratings->rate($user, $data);
+
+        return $this->toArrayForAuthor($order);
     }
 
     /**

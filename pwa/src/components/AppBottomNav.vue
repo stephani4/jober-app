@@ -4,20 +4,16 @@ import { RouterLink, useRoute } from 'vue-router'
 import BottomNavIcon from '@/components/BottomNavIcon.vue'
 import NotificationBadge from '@/components/NotificationBadge.vue'
 import { bottomNavItems } from '@/config/bottomNav'
-import { useAuth, useNotifications, useOrderTypes } from '@/composables'
+import { useAuth, useNotifications, useOrderTypes, useSearchOrders } from '@/composables'
 
 const route = useRoute()
 const { hasRole } = useAuth()
 const { unreadCount } = useNotifications()
+const { availableCount } = useSearchOrders()
 const { openPicker } = useOrderTypes()
 const activeKey = computed(() => route.meta.nav)
 
-// Состав табов зависит от роли: у заказчика нет поиска и откликов.
 const items = computed(() => bottomNavItems.filter((item) => hasRole(item.roles)))
-/** Колонок столько, сколько доступных табов, — иначе они «жмутся» влево. */
-const gridStyle = computed(() => ({
-  gridTemplateColumns: `repeat(${items.value.length}, minmax(0, 1fr))`,
-}))
 
 function isActive(key: string): boolean {
   return activeKey.value === key
@@ -26,56 +22,53 @@ function isActive(key: string): boolean {
 function isCreate(key: string): boolean {
   return key === 'create'
 }
+
+function itemClass(key: string): string {
+  return isActive(key)
+    ? 'bg-white text-zinc-950'
+    : 'bg-white/10 text-white hover:bg-white/15'
+}
 </script>
 
 <template>
   <nav
-    class="fixed bottom-0 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 overflow-hidden rounded-t-2xl border border-border-subtle bg-surface-page shadow-[var(--shadow-card)] pb-[env(safe-area-inset-bottom)] dark:border-white/10 dark:bg-zinc-900"
+    class="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center pb-[max(0.75rem,env(safe-area-inset-bottom))]"
     aria-label="Основная навигация"
   >
-    <div class="grid h-16 items-center justify-items-stretch" :style="gridStyle">
+    <div
+      class="pointer-events-auto flex items-center gap-1.5 rounded-full bg-surface-nav px-2 py-2 shadow-[var(--shadow-nav-active)]"
+    >
       <template v-for="item in items" :key="item.key">
         <button
           v-if="isCreate(item.key)"
           type="button"
-          class="relative flex flex-col items-center gap-1 py-1"
+          class="relative flex h-11 w-11 items-center justify-center rounded-full transition"
+          :class="itemClass(item.key)"
           :aria-label="item.label"
+          :aria-current="isActive(item.key) ? 'page' : undefined"
           @click="openPicker()"
         >
-          <span
-            class="flex h-11 w-11 items-center justify-center rounded-full bg-accent-nav text-white shadow-[var(--shadow-nav-active)]"
-          >
-            <BottomNavIcon :name="item.key" class="h-5 w-5 shrink-0" />
-          </span>
-          <span class="text-[10px] font-semibold leading-none text-text-primary">Заказ+</span>
+          <BottomNavIcon :name="item.key" class="h-5 w-5 shrink-0" />
         </button>
 
         <RouterLink
           v-else
           :to="item.to"
-          class="relative flex flex-col items-center gap-1 py-1"
+          class="relative flex h-11 w-11 items-center justify-center rounded-full transition"
+          :class="itemClass(item.key)"
           :aria-label="item.label"
           :aria-current="isActive(item.key) ? 'page' : undefined"
         >
-          <span
-            class="flex h-11 items-center justify-center rounded-full"
-            :class="
-              isActive(item.key)
-                ? 'w-11 bg-accent-nav text-white shadow-[var(--shadow-nav-active)]'
-                : 'w-8 text-text-secondary dark:text-zinc-400'
-            "
-          >
-            <BottomNavIcon :name="item.key" class="h-6 w-6 shrink-0" />
-          </span>
-          <span
-            class="text-[10px] leading-none"
-            :class="isActive(item.key) ? 'font-semibold text-text-primary' : 'text-text-secondary dark:text-zinc-400'"
-          >
-            {{ item.label }}
-          </span>
+          <BottomNavIcon :name="item.key" class="h-5 w-5 shrink-0" />
+          <NotificationBadge
+            v-if="item.key === 'search'"
+            class="absolute -right-0.5 -top-0.5 z-10"
+            :count="availableCount"
+            aria-label="Доступные заказы"
+          />
           <NotificationBadge
             v-if="item.key === 'profile'"
-            class="absolute right-1 top-0.5 z-10"
+            class="absolute -right-0.5 -top-0.5 z-10"
             :count="unreadCount"
           />
         </RouterLink>

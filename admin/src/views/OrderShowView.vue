@@ -9,6 +9,7 @@ import TabPanel from 'primevue/tabpanel'
 import TabPanels from 'primevue/tabpanels'
 import Tabs from 'primevue/tabs'
 import OrderExecutorBadge from '@/components/orders/OrderExecutorBadge.vue'
+import OrderPointFileList from '@/components/orders/OrderPointFileList.vue'
 import OrderWatchMap from '@/components/map/OrderWatchMap.vue'
 import { useOrderWatching } from '@/composables/useOrderWatching'
 import { adminOrderService } from '@/services/AdminOrderService'
@@ -141,7 +142,7 @@ function pointCoords(lat: number | null | undefined, lon: number | null | undefi
           <div class="grid gap-4 lg:grid-cols-3">
             <div class="space-y-4 lg:col-span-2">
               <div class="rounded-2xl border border-border-subtle bg-white p-4 dark:border-white/10 dark:bg-zinc-900">
-                <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div class="grid grid-cols-2 gap-4 md:grid-cols-5">
                   <div>
                     <p class="text-xs text-text-secondary">Статус</p>
                     <p class="mt-1 text-sm font-medium">{{ orderStatusLabel[order.status] }}</p>
@@ -157,6 +158,10 @@ function pointCoords(lat: number | null | undefined, lon: number | null | undefi
                   <div>
                     <p class="text-xs text-text-secondary">Создан</p>
                     <p class="mt-1 text-sm font-medium">{{ dateLabel(order.created_at) }}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs text-text-secondary">Завершен</p>
+                    <p class="mt-1 text-sm font-medium">{{ dateLabel(order.complete_at) }}</p>
                   </div>
                 </div>
 
@@ -181,41 +186,47 @@ function pointCoords(lat: number | null | undefined, lon: number | null | undefi
                 <p class="border-b border-border-subtle px-4 py-3 text-sm font-medium dark:border-white/10">
                   Точки маршрута ({{ order.points.length }})
                 </p>
-                <table class="min-w-full text-left text-sm">
-                  <thead class="text-text-secondary">
-                    <tr>
-                      <th class="px-4 py-2 font-medium">#</th>
-                      <th class="px-4 py-2 font-medium">Что сделать</th>
-                      <th class="px-4 py-2 font-medium">Адрес</th>
-                      <th class="px-4 py-2 font-medium">Координаты</th>
-                      <th class="px-4 py-2 font-medium">Доступ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr
-                      v-for="point in order.points"
-                      :key="point.id"
-                      class="border-t border-border-subtle align-top dark:border-white/10"
-                    >
-                      <td class="px-4 py-2">{{ point.position }}</td>
-                      <td class="px-4 py-2">{{ point.description }}</td>
-                      <td class="px-4 py-2">{{ point.address || '—' }}</td>
-                      <td class="px-4 py-2">{{ pointCoords(point.lat, point.lon) }}</td>
-                      <td class="px-4 py-2 text-xs text-text-secondary">
-                        <template v-if="point.entrance != null || point.floor != null || point.apartment || point.intercom != null">
-                          <span v-if="point.entrance != null">подъезд {{ point.entrance }};</span>
-                          <span v-if="point.floor != null"> этаж {{ point.floor }};</span>
-                          <span v-if="point.apartment"> кв. {{ point.apartment }};</span>
-                          <span v-if="point.intercom != null"> домофон {{ point.intercom }}</span>
-                        </template>
-                        <template v-else>—</template>
-                      </td>
-                    </tr>
-                    <tr v-if="order.points.length === 0">
-                      <td class="px-4 py-3 text-text-secondary" colspan="5">Точек нет.</td>
-                    </tr>
-                  </tbody>
-                </table>
+                <div class="overflow-x-auto">
+                  <table class="min-w-full text-left text-sm">
+                    <thead class="text-text-secondary">
+                      <tr>
+                        <th class="px-4 py-2 font-medium">#</th>
+                        <th class="px-4 py-2 font-medium">Что сделать</th>
+                        <th class="px-4 py-2 font-medium">Адрес</th>
+                        <th class="px-4 py-2 font-medium">Координаты</th>
+                        <th class="px-4 py-2 font-medium">Доступ</th>
+                        <th class="px-4 py-2 font-medium">Файлы</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        v-for="point in order.points"
+                        :key="point.id"
+                        class="border-t border-border-subtle align-top dark:border-white/10"
+                      >
+                        <td class="px-4 py-2">{{ point.position }}</td>
+                        <td class="px-4 py-2">{{ point.description }}</td>
+                        <td class="px-4 py-2">{{ point.address || '—' }}</td>
+                        <td class="px-4 py-2">{{ pointCoords(point.lat, point.lon) }}</td>
+                        <td class="px-4 py-2 text-xs text-text-secondary">
+                          <template v-if="point.entrance != null || point.floor != null || point.apartment || point.intercom != null">
+                            <span v-if="point.entrance != null">подъезд {{ point.entrance }};</span>
+                            <span v-if="point.floor != null"> этаж {{ point.floor }};</span>
+                            <span v-if="point.apartment"> кв. {{ point.apartment }};</span>
+                            <span v-if="point.intercom != null"> домофон {{ point.intercom }}</span>
+                          </template>
+                          <template v-else>—</template>
+                        </td>
+                        <td class="px-4 py-2">
+                          <OrderPointFileList :files="point.files ?? []" />
+                        </td>
+                      </tr>
+                      <tr v-if="order.points.length === 0">
+                        <td class="px-4 py-3 text-text-secondary" colspan="6">Точек нет.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
 

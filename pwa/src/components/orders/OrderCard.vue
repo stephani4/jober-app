@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import OrderExecutorBadge from '@/components/orders/OrderExecutorBadge.vue'
+import OrderRatingStars from '@/components/orders/OrderRatingStars.vue'
 import { orderStatusLabel, type Order, type OrderStatus } from '@/schemas/order'
 
 const props = defineProps<{
@@ -101,6 +102,12 @@ const costLabel = computed(() =>
       <span class="font-semibold tracking-[0.3em]">{{ confirmationCode }}</span>
       <span class="ml-1 text-xs text-text-secondary">— сообщите его исполнителю</span>
     </p>
+    <OrderRatingStars
+      v-if="order.can_rate || order.rating"
+      :order-id="order.id"
+      :rating="order.rating"
+      :can-rate="order.can_rate"
+    />
     <ol v-if="order.points.length" class="mt-3 space-y-1 text-sm text-text-secondary">
       <li v-for="point in order.points" :key="point.id">
         {{ point.position }}. {{ point.description }}

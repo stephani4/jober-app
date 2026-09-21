@@ -6,7 +6,7 @@ import type { Order } from '@/schemas/order'
 
 const router = useRouter()
 const { user } = useAuth()
-const { items, loaded } = useSearchOrders()
+const { items } = useSearchOrders()
 
 function canStart(order: Order): boolean {
   return user.value?.role === 'executor' && order.user_id !== user.value.id && order.status === 'wait'
@@ -18,16 +18,27 @@ function onStart(order: Order): void {
 </script>
 
 <template>
-  <section class="space-y-3">
-    <p v-if="loaded && items.length === 0" class="text-sm text-text-secondary">
-      Сейчас нет доступных заказов. Новые появятся здесь в realtime.
-    </p>
-    <OrderCard
-      v-for="order in items"
-      :key="order.id"
-      :order="order"
-      :startable="canStart(order)"
-      @start="onStart(order)"
-    />
+  <section class="flex min-h-0 flex-1 flex-col">
+    <div
+      v-if="items.length === 0"
+      class="flex min-h-0 flex-1 flex-col items-center justify-center px-6 text-center"
+    >
+      <span
+        class="h-10 w-10 animate-spin rounded-full border-2 border-border-subtle border-t-accent-nav"
+        aria-hidden="true"
+      />
+      <p class="mt-4 text-sm text-text-secondary">
+        Ищем заказ. Оповестим, сразу как появится
+      </p>
+    </div>
+    <div v-else class="space-y-3">
+      <OrderCard
+        v-for="order in items"
+        :key="order.id"
+        :order="order"
+        :startable="canStart(order)"
+        @start="onStart(order)"
+      />
+    </div>
   </section>
 </template>

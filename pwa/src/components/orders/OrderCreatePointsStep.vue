@@ -105,8 +105,6 @@ function pointLabel(point: DraftOrderPoint): string {
           :placeholder="descriptionPlaceholder"
         />
 
-        <OrderPointFileField v-model="element.files" />
-
         <p class="mt-3 text-sm text-text-secondary">{{ pointLabel(element) }}</p>
 
         <div
@@ -132,11 +130,26 @@ function pointLabel(point: DraftOrderPoint): string {
 
         <button
           type="button"
-          class="mt-2 w-full rounded-xl border border-border-subtle px-4 py-3 text-sm text-text-primary dark:border-white/10 dark:text-zinc-100"
+          class="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-border-subtle px-4 py-3 text-sm text-text-primary dark:border-white/10 dark:text-zinc-100"
           @click="pickingId = element.clientId"
         >
+          <svg
+            viewBox="0 0 24 24"
+            class="h-5 w-5 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z" />
+            <circle cx="12" cy="10" r="2.5" />
+          </svg>
           {{ singlePoint ? 'Указать на карте, куда доставить' : 'Выбрать на карте' }}
         </button>
+
+        <OrderPointFileField v-model="element.files" />
       </article>
     </VueDraggable>
 

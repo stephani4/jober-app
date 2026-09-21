@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuth, usePwaInstall, useWebPush } from '@/composables'
+import { useAuth, useOrderSound, usePwaInstall, useWebPush } from '@/composables'
 
 const router = useRouter()
 const { user, logout } = useAuth()
 const { canInstall, isStandalone, isIos, install } = usePwaInstall()
 const { supported, subscribed, busy, error, permission, enable, disable } = useWebPush()
+const { enabled: soundEnabled, toggle: toggleSound } = useOrderSound()
 
 const showInstall = computed(() => canInstall.value || (isIos.value && !isStandalone.value))
 
@@ -143,6 +144,16 @@ async function onLogout(): Promise<void> {
         </span>
         <span class="relative h-7 w-12 shrink-0 rounded-full transition" :class="subscribed ? 'bg-accent-nav' : 'bg-surface-muted dark:bg-zinc-700'" aria-hidden="true">
           <span class="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition" :class="subscribed ? 'left-5' : 'left-0.5'" />
+        </span>
+      </button>
+
+      <button type="button" class="flex w-full items-center gap-3 rounded-2xl border border-border-subtle bg-surface-card px-4 py-3.5 text-left shadow-[var(--shadow-card)] transition hover:bg-surface-muted dark:border-white/10 dark:bg-zinc-900 dark:hover:bg-zinc-800" @click="toggleSound">
+        <span class="min-w-0 flex-1">
+          <span class="block text-sm text-text-primary dark:text-zinc-100">Звуковые сигналы</span>
+          <span class="mt-0.5 block text-sm text-text-secondary">{{ soundEnabled ? 'Новые заказы и отклики' : 'Выключены' }}</span>
+        </span>
+        <span class="relative h-7 w-12 shrink-0 rounded-full transition" :class="soundEnabled ? 'bg-accent-nav' : 'bg-surface-muted dark:bg-zinc-700'" aria-hidden="true">
+          <span class="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition" :class="soundEnabled ? 'left-5' : 'left-0.5'" />
         </span>
       </button>
     </div>

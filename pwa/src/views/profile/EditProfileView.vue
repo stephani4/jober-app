@@ -100,15 +100,15 @@ async function onSubmit(): Promise<void> {
           :name="user?.name"
         />
 
-        <!-- Имя -->
+        <!-- ФИО -->
         <div class="mt-4">
-          <label class="text-sm text-text-secondary" for="profile-name">Имя</label>
+          <label class="text-sm text-text-secondary" for="profile-name">ФИО</label>
           <input
             id="profile-name"
             v-model="form.name"
             type="text"
             autocomplete="name"
-            placeholder="Ваше имя"
+            placeholder="Иванов Иван Иванович"
             class="mt-1 w-full rounded-xl border border-border-subtle bg-white px-4 py-3 text-text-primary outline-none transition placeholder:text-text-secondary/60 focus:border-accent-nav focus:ring-2 focus:ring-accent-nav/25 dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-500"
           />
         </div>

@@ -30,7 +30,7 @@ export const profileSchema = userSchema.pick({
 
 /** Данные формы редактирования профиля. */
 export const profileUpdatePayloadSchema = z.object({
-  name: z.string().trim().min(1, 'Укажите имя'),
+  name: z.string().trim().min(1, 'Укажите ФИО'),
   birth_date: z.string().nullable(),
   working_area_id: z.number().int().positive().nullable(),
   avatar_id: z.number().int().positive().nullable(),

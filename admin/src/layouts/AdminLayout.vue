@@ -18,7 +18,7 @@ async function onLogout(): Promise<void> {
   <div class="flex min-h-screen bg-surface-page text-text-primary dark:bg-zinc-950 dark:text-zinc-100">
     <aside class="flex w-60 shrink-0 flex-col bg-surface-sidebar text-white">
       <div class="px-5 py-6">
-        <p class="text-xs uppercase tracking-[0.2em] text-white/50">Jober</p>
+        <p class="text-xs uppercase tracking-[0.2em] text-white/50">Делег</p>
         <p class="mt-1 text-lg font-semibold">Админка</p>
       </div>
       <nav class="flex-1 space-y-1 px-3">
