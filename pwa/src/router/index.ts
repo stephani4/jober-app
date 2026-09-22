@@ -28,6 +28,13 @@ const router = createRouter({
       ],
     },
     {
+      // Публичная страница согласия — доступна гостям и авторизованным, без middleware
+      path: '/consent',
+      name: 'consent',
+      component: () => import('@/views/legal/PersonalDataConsentView.vue'),
+      meta: { title: 'Согласие на обработку персональных данных' },
+    },
+    {
       path: '/',
       component: () => import('@/layouts/AuthLayout.vue'),
       meta: { middleware: [authMiddleware] },

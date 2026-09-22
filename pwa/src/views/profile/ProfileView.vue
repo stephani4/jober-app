@@ -118,7 +118,7 @@ async function onLogout(): Promise<void> {
       >
         <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-text-primary text-white" aria-hidden="true">
           <svg v-if="item.icon === 'orders'" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /><path d="M9 12h6M9 16h6" /></svg>
-          <svg v-else-if="item.icon === 'bell'" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h4M10 6v7M14 6v7M10 13h-3v3M14 13h3v3M7 16h10M12 16v4" /></svg>
+          <svg v-else-if="item.icon === 'bell'" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9" /><path d="M10 20a2 2 0 0 0 4 0" /></svg>
           <svg v-else-if="item.icon === 'history'" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="1.5" /><path d="M11 7h5" /><circle cx="8" cy="12" r="1.5" /><path d="M11 12h7" /><circle cx="8" cy="17" r="1.5" /><path d="M11 17h5" /></svg>
           <svg v-else viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4" /><path d="M5 20a7 7 0 0 1 14 0" /></svg>
         </span>

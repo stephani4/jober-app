@@ -194,7 +194,13 @@ async function onSubmit(): Promise<void> {
         @change="v$.personal_data_consent.$touch()"
       />
       <span class="text-sm text-slate-600 dark:text-slate-400">
-        Даю согласие на обработку персональных данных
+        Даю согласие на
+        <RouterLink
+          :to="{ name: 'consent' }"
+          class="font-medium text-accent-primary underline underline-offset-4 hover:text-accent-primary-hover dark:text-orange-200"
+          target="_blank"
+          @click.stop
+        >обработку персональных данных</RouterLink>
       </span>
     </label>
     <p
