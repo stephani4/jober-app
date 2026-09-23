@@ -25,7 +25,12 @@ import {
 } from '@/schemas/order'
 import { orderMessageEventSchema, orderMessageSchema, type OrderMessage, type OrderMessageEvent } from '@/schemas/orderMessage'
 import { profileSchema, type Profile, type ProfileUpdatePayload } from '@/schemas/user'
-import { workingAreaOptionListSchema, type WorkingAreaOption } from '@/schemas/workingArea'
+import {
+  workingAreaListSchema,
+  workingAreaOptionListSchema,
+  type WorkingArea,
+  type WorkingAreaOption,
+} from '@/schemas/workingArea'
 import { centrifugoClient } from '@/services/CentrifugoClient'
 
 /**
@@ -208,6 +213,10 @@ export class RealtimeService {
     return await centrifugoClient.rpc<number>('order:responses_count')
   }
 
+  async completedToday(): Promise<number> {
+    return await centrifugoClient.rpc<number>('order:completed_today')
+  }
+
   async getAvailableExecutorsCount(): Promise<number> {
     return await centrifugoClient.rpc<number>('order:available_executors_count')
   }
@@ -258,6 +267,13 @@ export class RealtimeService {
   async listWorkingAreas(): Promise<WorkingAreaOption[]> {
     const data = await centrifugoClient.rpc<unknown>('profile:areas')
     const parsed = workingAreaOptionListSchema.safeParse(Array.isArray(data) ? data : [])
+
+    return parsed.success ? parsed.data : []
+  }
+
+  async listWorkingAreaZones(): Promise<WorkingArea[]> {
+    const data = await centrifugoClient.rpc<unknown>('working-areas:list')
+    const parsed = workingAreaListSchema.safeParse(Array.isArray(data) ? data : [])
 
     return parsed.success ? parsed.data : []
   }

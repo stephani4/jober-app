@@ -18,6 +18,15 @@ class UserProfileRpcService
     }
 
     /**
+     * Полный список рабочих зон с контурами (points/geometry)
+     * — для проверки попадания точек заказа в зоны.
+     */
+    public function listAreasWithGeometry(User $user): array
+    {
+        return WorkingArea::select(['id', 'name', 'type', 'points', 'geometry'])->get()->toArray();
+    }
+
+    /**
      * Обновление профиля пользователя.
      */
     public function update(User $user, array $data): array

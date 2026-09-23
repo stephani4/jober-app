@@ -2,6 +2,7 @@ import { computed, onBeforeUnmount, watch, type Ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useOrderExecuteStore } from '@/stores/orderExecute'
+import { useOrderStatsStore } from '@/stores/orderStats'
 import { useGeolocation } from '@/composables/useGeolocation'
 import { useExecuteRoute } from '@/composables/useExecuteRoute'
 import { useExecutorLocationPublisher } from '@/composables/useExecutorLocationPublisher'
@@ -113,6 +114,8 @@ export function useOrderExecuteDriver(orderId: Ref<number | null>) {
   async function confirmCompletion(code: string): Promise<void> {
     const ok = await store.confirmCompletion(code)
     if (ok && executing.value?.status === 'complete') {
+      // Заказ выполнен — обновляем счётчик «выполнено сегодня» на главной.
+      useOrderStatsStore().bumpCompletedToday()
       await router.replace({ name: 'orders' })
     }
   }

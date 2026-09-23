@@ -364,6 +364,25 @@ class OrderRpcService
     }
 
     /**
+     * Сколько заказов исполнитель завершил сегодня.
+     *
+     * Днём завершения считаем момент подтверждения (complete_at), а если
+     * заказ исполнил сегодня, но подтверждение пришло после полуночи —
+     * момент фактического окончания работы (confirmation_at).
+     */
+    public function completedToday(User $user): int
+    {
+        return OrderExecuting::query()
+            ->where('executor_id', $user->id)
+            ->where('status', OrderExecutingStatus::Complete)
+            ->where(function ($query) {
+                $query->whereDate('confirmation_at', now()->toDateString())
+                    ->orWhereDate('complete_at', now()->toDateString());
+            })
+            ->count();
+    }
+
+    /**
      * Обновляет статус заказа у автора в realtime.
      */
     private function publishOrderStatus(?Order $order): void

@@ -12,6 +12,7 @@ import { useOrderOfferStore } from '@/stores/orderOffer'
 import { useNotificationsStore } from '@/stores/notifications'
 import { useOrderChatStore } from '@/stores/orderChat'
 import { useOrderHistoryStore } from '@/stores/orderHistory'
+import { useOrderStatsStore } from '@/stores/orderStats'
 import { useRealtimeStore } from '@/stores/realtime'
 import { useSearchOrdersStore } from '@/stores/searchOrders'
 
@@ -33,6 +34,7 @@ export function useRealtime() {
   const notifications = useNotificationsStore()
   const chat = useOrderChatStore()
   const history = useOrderHistoryStore()
+  const stats = useOrderStatsStore()
   const sound = useOrderSound()
   const { status } = storeToRefs(realtime)
 
@@ -194,6 +196,7 @@ export function useRealtime() {
         notifications.reset()
         chat.reset()
         history.reset()
+        stats.reset()
       },
       { immediate: true },
     )

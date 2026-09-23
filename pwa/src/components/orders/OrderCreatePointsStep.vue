@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { useToast } from 'primevue/usetoast'
 import { VueDraggable } from 'vue-draggable-plus'
 import VkMapPicker from '@/components/map/VkMapPicker.vue'
 import BuildingDetailsFields from '@/components/orders/BuildingDetailsFields.vue'
 import OrderPointFileField from '@/components/orders/OrderPointFileField.vue'
+import { useWorkingAreas } from '@/composables'
 import type { DraftOrderPoint } from '@/stores/orderCreate'
 
 const props = defineProps<{
@@ -17,6 +19,13 @@ const emit = defineEmits<{
   remove: [clientId: string]
   locate: [payload: { clientId: string; lat: number; lon: number; address: string | null }]
 }>()
+
+const toast = useToast()
+const { load: loadWorkingAreas, isInside } = useWorkingAreas()
+
+onMounted(() => {
+  void loadWorkingAreas()
+})
 
 const pickingId = ref<string | null>(null)
 
@@ -39,8 +48,21 @@ const mapTitle = computed(() =>
   props.singlePoint ? 'Куда доставить товар' : 'Выберите точку на карте',
 )
 
-function onMapSelect(payload: { lat: number; lon: number; address: string | null }): void {
+async function onMapSelect(payload: { lat: number; lon: number; address: string | null }): Promise<void> {
   if (!pickingId.value) {
+    return
+  }
+  // Проверяем попадание в рабочую зону. Если зоны не загрузились — выбор не блокируем.
+  await loadWorkingAreas().catch((err) => {
+    console.error('Не удалось загрузить рабочие зоны для проверки точки:', err)
+  })
+  if (!isInside(payload.lat, payload.lon)) {
+    toast.add({
+      severity: 'error',
+      summary: 'Точка вне рабочей зоны',
+      detail: 'Точка должна попадать в рабочую зону.',
+      life: 6000,
+    })
     return
   }
   emit('locate', { clientId: pickingId.value, ...payload })

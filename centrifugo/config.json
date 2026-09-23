@@ -56,6 +56,10 @@
       {
         "name": "profile",
         "proxy_enabled": true
+      },
+      {
+        "name": "working-areas",
+        "proxy_enabled": true
       }
     ]
   }

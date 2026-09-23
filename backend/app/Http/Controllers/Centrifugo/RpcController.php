@@ -57,6 +57,7 @@ class RpcController extends Controller
                 'order:watching' => $this->orders->watching($user, $data),
                 'order:active' => $this->orders->active($user),
                 'order:responses_count' => $this->orders->responsesCount($user),
+                'order:completed_today' => $this->orders->completedToday($user),
                 'order:available_executors_count' => $this->orders->availableExecutorsCount(),
                 'order:location' => $this->orders->location($user, $data),
                 'order:completePoint' => $this->orders->completePoint($user, $data),
@@ -70,6 +71,7 @@ class RpcController extends Controller
                 'notification:read' => $this->notifications->read($user, $data),
                 'notification:unreadCount' => $this->notifications->unreadCount($user),
                 'profile:areas' => $this->profile->listAreas($user),
+                'working-areas:list' => $this->profile->listAreasWithGeometry($user),
                 'profile:update' => $this->profile->update($user, $data),
                 default => null,
             };

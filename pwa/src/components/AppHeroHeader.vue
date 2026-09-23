@@ -3,13 +3,15 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppBrandLogo from '@/components/AppBrandLogo.vue'
 import NotificationBadge from '@/components/NotificationBadge.vue'
-import { useAuth, useNotifications, useOrderChat, useOrderDecline, useOrders } from '@/composables'
+import { useAuth, useNotifications, useOrderChat, useOrderDecline, useOrders, useOrderStats, useSearchOrders } from '@/composables'
 import { givenNameFromFio } from '@/utils/name'
 
 const route = useRoute()
 const router = useRouter()
 const { user, hasRole } = useAuth()
 const { items, availableExecutorsCount } = useOrders()
+const { availableCount } = useSearchOrders()
+const { completedToday } = useOrderStats()
 const { unreadCount } = useNotifications()
 const { open: chatOpen, unreadCount: chatUnread, showChat, toggle: toggleChat, close: closeChat } = useOrderChat()
 const decline = useOrderDecline()
@@ -201,6 +203,20 @@ function goToHomeChat(): void {
               aria-hidden="true"
             >
               <svg
+                v-if="canSearch"
+                viewBox="0 0 24 24"
+                class="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <path d="m9 11 3 3L22 4" />
+              </svg>
+              <svg
+                v-else
                 viewBox="0 0 24 24"
                 class="h-5 w-5"
                 fill="none"
@@ -216,15 +232,18 @@ function goToHomeChat(): void {
             <span class="text-xs text-text-secondary">Сегодня</span>
           </div>
           <p class="mt-4 text-3xl font-semibold leading-none text-text-primary dark:text-zinc-50">
-            {{ myOrdersCount }}
+            {{ canSearch ? completedToday : myOrdersCount }}
           </p>
-          <p class="mt-1 text-xs text-text-secondary">Активных заказов</p>
+          <p class="mt-1 text-xs text-text-secondary">
+            {{ canSearch ? 'Заказов выполнено сегодня' : 'Ваших заказов на исполнении другими исполнителями' }}
+          </p>
         </div>
 
         <button
           v-if="canSearch"
           type="button"
           class="rounded-3xl bg-white p-4 text-left shadow-[var(--shadow-card)] dark:bg-zinc-900"
+          :aria-label="`Заказов в поиске, ожидающих исполнителя: ${availableCount}`"
           @click="goToSearch"
         >
           <div class="flex items-start justify-between gap-2">
@@ -247,8 +266,10 @@ function goToHomeChat(): void {
             </span>
             <span class="text-xs text-text-secondary">Поиск</span>
           </div>
-          <p class="mt-4 text-sm font-semibold text-text-primary dark:text-zinc-50">Найти заказ</p>
-          <p class="mt-1 text-xs text-text-secondary">Лента рядом с вами</p>
+          <p class="mt-4 text-3xl font-semibold leading-none text-text-primary dark:text-zinc-50">
+            {{ availableCount }}
+          </p>
+          <p class="mt-1 text-xs text-text-secondary">Ожидают исполнителя</p>
         </button>
 
         <div

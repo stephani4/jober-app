@@ -3,10 +3,12 @@ import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { configureVkMapsSdk, defaultMapCenter, defaultMapLocation, vkMapsStyle } from '@/config/vkMaps'
 import { requestCurrentPosition } from '@/composables/useGeolocation'
 import { useVkMapsPlaceSearch } from '@/composables/useVkMapsPlaceSearch'
+import { useWorkingAreas } from '@/composables'
 import {
   vkMapsGeocodingService,
   type VkMapsSuggestItem,
 } from '@/services/VkMapsGeocodingService'
+import type { LngLat } from '@/utils/geo'
 
 const props = withDefaults(
   defineProps<{
@@ -43,6 +45,14 @@ const addressNotice = ref('')
 const locating = ref(false)
 /** Не удалось получить координаты по кнопке. */
 const locateError = ref('')
+/** Контуры рабочих зон показаны на карте. */
+const zonesVisible = ref(false)
+/** Идёт первичная загрузка зон для показа. */
+const zonesLoading = ref(false)
+/** Слой зон уже добавлен на карту. */
+let zonesSourceAdded = false
+
+const { load: loadWorkingAreas, zones } = useWorkingAreas()
 
 function hasSelectedPoint(): boolean {
   return props.lon != null && props.lat != null
@@ -145,6 +155,99 @@ async function goToCurrentLocation(): Promise<void> {
 }
 
 /**
+ * Замыкает кольцо полигона: в GeoJSON первая вершина повторяется в конце.
+ */
+function closeRing(polygon: LngLat[]): LngLat[] {
+  const first = polygon[0]
+  const last = polygon[polygon.length - 1]
+  if (first && last && first[0] === last[0] && first[1] === last[1]) {
+    return polygon
+  }
+  return [...polygon, first]
+}
+
+/**
+ * Добавляет на карту слой-заливку с контурами всех рабочих зон.
+ */
+function drawZones(): void {
+  if (!map || zonesSourceAdded || !map.isStyleLoaded()) {
+    return
+  }
+  const polygons = zones.value
+    .filter((zone) => zone.polygon.length >= 3)
+    .map((zone) => closeRing(zone.polygon))
+  if (polygons.length === 0) {
+    return
+  }
+
+  map.addSource('jober-zones-source', {
+    type: 'geojson',
+    data: {
+      type: 'FeatureCollection',
+      features: polygons.map((coordinates) => ({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [coordinates] },
+        properties: {},
+      })),
+    },
+  })
+  map.addLayer({
+    id: 'jober-zones-layer',
+    type: 'fill',
+    source: 'jober-zones-source',
+    paint: {
+      'fill-color': '#3b82f6',
+      'fill-opacity': 0.25,
+      'fill-outline-color': '#2563eb',
+    },
+  })
+  zonesSourceAdded = true
+}
+
+/**
+ * Убирает с карты слой с рабочими зонами.
+ */
+function clearZones(): void {
+  if (!map) {
+    return
+  }
+  if (map.getLayer('jober-zones-layer')) {
+    map.removeLayer('jober-zones-layer')
+  }
+  if (map.getSource('jober-zones-source')) {
+    map.removeSource('jober-zones-source')
+  }
+  zonesSourceAdded = false
+}
+
+/**
+ * Показывает/скрывает контуры рабочих зон по кнопке на карте.
+ */
+async function toggleZones(): Promise<void> {
+  if (zonesVisible.value) {
+    zonesVisible.value = false
+    clearZones()
+    return
+  }
+  if (zones.value.length === 0) {
+    zonesLoading.value = true
+    try {
+      await loadWorkingAreas().catch((err) => {
+        console.error('Не удалось загрузить рабочие зоны:', err)
+      })
+    } finally {
+      zonesLoading.value = false
+    }
+  }
+  if (zones.value.length === 0) {
+    // Зон нет — показывать нечего.
+    return
+  }
+  drawZones()
+  zonesVisible.value = true
+}
+
+/**
  * Попал ли клик в здание на карте: проверяем рендер тайлов по слоям зданий.
  * На низком зуме тайлы зданий ещё не подгружены, поэтому выбирать нужно, приблизившись к дому.
  */
@@ -230,6 +333,10 @@ onMounted(async () => {
     }
     if (userPosition) {
       placeUserMarker([userPosition.lon, userPosition.lat])
+    }
+    // Если зоны включили до загрузки стиля — рисуем их после готовности карты.
+    if (zonesVisible.value) {
+      drawZones()
     }
   })
 
@@ -348,28 +455,59 @@ onBeforeUnmount(() => {
     </div>
     <div class="relative flex min-h-0 flex-1 flex-col">
       <div ref="container" class="min-h-0 flex-1" />
-      <button
-        type="button"
-        class="absolute top-1/2 right-4 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-text-primary shadow-[var(--shadow-card)] disabled:opacity-50 dark:bg-zinc-800 dark:text-zinc-100"
-        aria-label="Моё местоположение"
-        :disabled="locating"
-        @click="goToCurrentLocation"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          class="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.75"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
+      <div class="absolute top-1/2 right-4 z-10 flex -translate-y-1/2 flex-col gap-2">
+        <button
+          type="button"
+          class="flex h-11 w-11 items-center justify-center rounded-full shadow-[var(--shadow-card)] transition disabled:opacity-50"
+          :class="
+            zonesVisible
+              ? 'bg-accent-primary text-white dark:bg-accent-primary dark:text-white'
+              : 'bg-white text-text-primary dark:bg-zinc-800 dark:text-zinc-100'
+          "
+          :aria-label="zonesVisible ? 'Скрыть рабочую зону' : 'Показать рабочую зону'"
+          :aria-pressed="zonesVisible"
+          :disabled="zonesLoading"
+          @click="toggleZones"
         >
-          <circle cx="12" cy="12" r="3" />
-          <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-          <circle cx="12" cy="12" r="8" />
-        </svg>
-      </button>
+          <svg
+            viewBox="0 0 24 24"
+            class="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="6" cy="19" r="3" />
+            <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" />
+            <circle cx="18" cy="5" r="3" />
+          </svg>
+        </button>
+
+        <button
+          type="button"
+          class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-text-primary shadow-[var(--shadow-card)] disabled:opacity-50 dark:bg-zinc-800 dark:text-zinc-100"
+          aria-label="Моё местоположение"
+          :disabled="locating"
+          @click="goToCurrentLocation"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            class="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+            <circle cx="12" cy="12" r="8" />
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 </template>

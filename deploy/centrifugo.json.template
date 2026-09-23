@@ -35,7 +35,8 @@
     },
     "namespaces": [
       { "name": "order", "proxy_enabled": true },
-      { "name": "notification", "proxy_enabled": true }
+      { "name": "notification", "proxy_enabled": true },
+      { "name": "working-areas", "proxy_enabled": true }
     ]
   }
 }

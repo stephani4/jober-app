@@ -78,6 +78,48 @@ export function closestPointOnPolyline(
 }
 
 /**
+ * Попадает ли точка в многоугольник (ray casting).
+ * `polygon` — вершины [lng, lat]; замыкание первой/последней вершины не требуется.
+ */
+export function pointInPolygon(point: LngLat, polygon: LngLat[]): boolean {
+  if (polygon.length < 3) {
+    return false
+  }
+  const [lng, lat] = point
+  let inside = false
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
+    const [xi, yi] = polygon[i]
+    const [xj, yj] = polygon[j]
+    const crosses = yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi
+    if (crosses) {
+      inside = !inside
+    }
+  }
+  return inside
+}
+
+/**
+ * Разбирает многоугольник WKT вида `POLYGON((lng lat, lng lat, ...))`
+ * в массив координат [lng, lat]. Возвращает null при невалидной строке
+ * или если вершин меньше трёх.
+ */
+export function parseWktPolygon(wkt: string): LngLat[] | null {
+  const match = /^\s*POLYGON\s*\(\s*\(\s*([\s\S]*?)\s*\)\s*\)\s*$/i.exec(wkt)
+  if (!match) {
+    return null
+  }
+  const coords: LngLat[] = []
+  for (const pair of match[1].split(',')) {
+    const [lng, lat] = pair.trim().split(/\s+/).map(Number)
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
+      return null
+    }
+    coords.push([lng, lat])
+  }
+  return coords.length >= 3 ? coords : null
+}
+
+/**
  * Оставляет хвост маршрута от проекции текущей позиции до конца.
  */
 export function trimRoute(

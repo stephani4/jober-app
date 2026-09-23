@@ -21,6 +21,10 @@ export class OrderService {
     return realtimeService.listFeed()
   }
 
+  completedToday(): Promise<number> {
+    return realtimeService.completedToday()
+  }
+
   start(orderId: number): Promise<OrderExecuting> {
     return realtimeService.startOrder(orderId)
   }
